@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "phone": { "type": "string", "description": "Contact number" },
+        "role": { "type": "string", "enum": ["CUSTOMER", "ADMIN"], "description": "User role" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation time" }
+      },
+      "required": ["name", "email", "role", "createdAt"]
+    },
+    "Package": {
+      "title": "Package",
+      "description": "Buffet package details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Package name" },
+        "description": { "type": "string", "description": "Menu details" },
+        "pricePerPerson": { "type": "number", "description": "Price per person" },
+        "type": { "type": "string", "enum": ["LUNCH", "DINNER", "BRUNCH"], "description": "Meal type" },
+        "imageUrl": { "type": "string", "format": "uri", "description": "Image URL" },
+        "isActive": { "type": "boolean", "description": "Whether the package is visible" }
+      },
+      "required": ["name", "description", "pricePerPerson", "type", "isActive"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "Dining session availability",
+      "type": "object",
+      "properties": {
+        "packageId": { "type": "string", "description": "Reference to package" },
+        "sessionDate": { "type": "string", "format": "date", "description": "Dining date" },
+        "startTime": { "type": "string", "description": "Start time" },
+        "endTime": { "type": "string", "description": "End time" },
+        "maxCapacity": { "type": "number", "description": "Maximum guests" },
+        "currentBooked": { "type": "number", "description": "Currently booked seats" },
+        "status": { "type": "string", "enum": ["OPEN", "FULL", "CANCELLED"], "description": "Session status" }
+      },
+      "required": ["packageId", "sessionDate", "startTime", "endTime", "maxCapacity", "currentBooked", "status"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "Customer booking record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Reference to user" },
+        "sessionId": { "type": "string", "description": "Reference to session" },
+        "guestCount": { "type": "number", "description": "Number of guests" },
+        "specialRequest": { "type": "string", "description": "Dietary notes" },
+        "status": { "type": "string", "enum": ["PENDING", "CONFIRMED", "CANCELLED"], "description": "Reservation status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Booking time" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update time" }
+      },
+      "required": ["userId", "sessionId", "guestCount", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/packages/{packageId}": { "schema": "Package", "description": "Buffet packages" },
+    "/sessions/{sessionId}": { "schema": "Session", "description": "Dining sessions" },
+    "/reservations/{reservationId}": { "schema": "Reservation", "description": "Customer reservations" }
+  }
+}
