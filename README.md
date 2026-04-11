@@ -1,20 +1,52 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Cloud Buffet Booking System (BuffetEase)
 
-# Run and deploy your AI Studio app
+**COMP4442 Semester Project**
 
-This contains everything you need to run your app locally.
+This is a frontend project for a cloud-based buffet reservation system developed using React.js. The system provides customers with online booking, availability checking, and reservation management, while also featuring an admin dashboard for managing schedules and orders.
 
-View your app in AI Studio: https://ai.studio/apps/b88125af-daeb-41b5-a62e-9c08f87d008e
+## Key Features
 
-## Run Locally
+*   **Customer Portal:**
+    *   Browse buffet packages.
+    *   Book reservations by selecting date, number of guests, and session.
+    *   View personal booking history.
+    *   Cancel reservations.
+*   **Admin Dashboard:**
+    *   View all reservation records and statuses.
+    *   Confirm or manage customer bookings.
+    *   Manage buffet packages and dining sessions.
 
-**Prerequisites:**  Node.js
+## Tech Stack
 
+*   **Frontend Framework:** React.js (Vite)
+*   **Routing:** React Router v6
+*   **UI Components:** Tailwind CSS, shadcn/ui, Lucide Icons
+*   **Animations:** Framer Motion
+*   **State & Data:** React Context API, LocalStorage (Mock Backend)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Getting Started
+
+If you are opening this project for the first time, follow these steps to run it locally:
+
+### 1. Install Node.js
+Ensure you have [Node.js](https://nodejs.org/) installed (version 18 or higher recommended).
+
+### 2. Install Dependencies
+Open a terminal in the project root directory and run the following command to install the necessary packages:
+```bash
+npm install
+```
+
+### 3. Start Development Server
+After installation is complete, run the following command to start the project:
+```bash
+npm run dev
+```
+Once the server starts, open your browser and go to `http://localhost:3000` to preview the website.
+
+## Mock Accounts
+
+This project currently uses LocalStorage to simulate the backend and authentication state. You can use the following test accounts on the sign-in page:
+
+*   **Admin Account:** `admin@test.com` (or `tony107107107@gmail.com`)
+*   **Customer Account:** `user@test.com` (or any other email address)

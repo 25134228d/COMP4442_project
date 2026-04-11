@@ -13,6 +13,7 @@ import { PackagesPage } from './pages/PackagesPage';
 import { BookingPage } from './pages/BookingPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AboutPage } from './pages/AboutPage';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
   const { user, profile, loading, isAdmin } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
             <AnimatePresence mode="wait">
               <Routes>
                 <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+                <Route path="/about" element={<PageWrapper><AboutPage /></PageWrapper>} />
                 <Route path="/auth" element={<PageWrapper><AuthPage /></PageWrapper>} />
                 <Route path="/packages" element={<PageWrapper><PackagesPage /></PageWrapper>} />
                 <Route 

@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../components/ui/dialog';
 import { motion } from 'motion/react';
 import { Calendar, Clock, Users, XCircle, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -19,6 +20,7 @@ export function MyBookingsPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -26,9 +28,6 @@ export function MyBookingsPage() {
       const data = await BuffetService.getMyReservations(user.uid);
       if (data) {
         const enriched = await Promise.all(data.map(async (b) => {
-          const sessions = await BuffetService.getSessionsByPackage(''); // In mock, we can just get all or find by id
-          // Actually we need a getSessionById in mock service, let's just fetch all sessions and find it
-          // For simplicity, let's assume we can find it
           const allSessions = await BuffetService.getSessionsByPackage('pkg-1');
           const allSessions2 = await BuffetService.getSessionsByPackage('pkg-2');
           const allSessions3 = await BuffetService.getSessionsByPackage('pkg-3');
@@ -46,18 +45,18 @@ export function MyBookingsPage() {
     fetchBookings();
   }, [user]);
 
-  const handleCancel = async (booking: BookingWithDetails) => {
-    // We can use window.confirm since it's a mock, but better to use a custom modal if possible.
-    // For now, window.confirm is fine for the mock.
-    if (!window.confirm('Are you sure you want to cancel this reservation?')) return;
+  const confirmCancel = async () => {
+    if (!cancelBookingId) return;
     
     try {
-      await BuffetService.updateReservationStatus(booking.id, 'CANCELLED');
-      setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'CANCELLED' } : b));
-      toast.success('Reservation cancelled');
+      await BuffetService.updateReservationStatus(cancelBookingId, 'CANCELLED');
+      setBookings(prev => prev.map(b => b.id === cancelBookingId ? { ...b, status: 'CANCELLED' } : b));
+      toast.success('Reservation cancelled successfully');
     } catch (error) {
       console.error(error);
       toast.error('Failed to cancel reservation');
+    } finally {
+      setCancelBookingId(null);
     }
   };
 
@@ -125,7 +124,7 @@ export function MyBookingsPage() {
                         variant="ghost" 
                         size="sm" 
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
-                        onClick={() => handleCancel(booking)}
+                        onClick={() => setCancelBookingId(booking.id)}
                       >
                         <XCircle className="h-4 w-4 mr-2" /> Cancel Reservation
                       </Button>
@@ -144,6 +143,25 @@ export function MyBookingsPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!cancelBookingId} onOpenChange={(open) => !open && setCancelBookingId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Reservation</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this reservation? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6">
+            <DialogClose asChild>
+              <Button variant="outline">Keep Reservation</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={confirmCancel}>
+              Yes, Cancel it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

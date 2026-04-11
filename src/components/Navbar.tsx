@@ -1,11 +1,19 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { Button } from './ui/button';
 import { Utensils, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function Navbar() {
   const { user, profile, isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Successfully logged out');
+    navigate('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-brand-cream/80 backdrop-blur-md">
@@ -16,6 +24,11 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-6">
+          {!isAdmin && (
+            <Link to="/about" className="text-sm font-medium hover:text-brand-olive transition-colors">
+              About Us
+            </Link>
+          )}
           <Link to="/packages" className="text-sm font-medium hover:text-brand-olive transition-colors">
             Packages
           </Link>
@@ -39,7 +52,7 @@ export function Navbar() {
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{profile?.role}</span>
                 <span className="text-sm font-medium">{profile?.name}</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => logout()}>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>

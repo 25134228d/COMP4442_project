@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { motion } from 'motion/react';
 import { ArrowRight, Star, Clock, Users } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
 
 export function HomePage() {
+  const { user } = useAuth();
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -39,11 +42,13 @@ export function HomePage() {
                   Explore Packages <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/auth">
-                <Button size="lg" variant="outline" className="rounded-full px-8 h-14 text-lg border-brand-olive text-brand-olive hover:bg-brand-olive/5">
-                  Join the Club
-                </Button>
-              </Link>
+              {!user && (
+                <Link to="/auth">
+                  <Button size="lg" variant="outline" className="rounded-full px-8 h-14 text-lg border-brand-olive text-brand-olive hover:bg-brand-olive/5">
+                    Join the Club
+                  </Button>
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>
