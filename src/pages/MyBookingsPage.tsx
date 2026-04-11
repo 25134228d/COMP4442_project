@@ -32,10 +32,10 @@ export function MyBookingsPage() {
           const allSessions2 = await BuffetService.getSessionsByPackage('pkg-2');
           const allSessions3 = await BuffetService.getSessionsByPackage('pkg-3');
           const all = [...allSessions, ...allSessions2, ...allSessions3];
-          
+
           const session = all.find(s => s.id === b.sessionId);
           const pkg = session ? await BuffetService.getPackageById(session.packageId) : undefined;
-          
+
           return { ...b, session, pkg };
         }));
         setBookings(enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -47,7 +47,7 @@ export function MyBookingsPage() {
 
   const confirmCancel = async () => {
     if (!cancelBookingId) return;
-    
+
     try {
       await BuffetService.updateReservationStatus(cancelBookingId, 'CANCELLED');
       setBookings(prev => prev.map(b => b.id === cancelBookingId ? { ...b, status: 'CANCELLED' } : b));
@@ -80,9 +80,9 @@ export function MyBookingsPage() {
             <Card className="border-none shadow-md hover:shadow-xl transition-all overflow-hidden bg-white">
               <CardContent className="p-0 flex flex-col md:flex-row">
                 <div className="w-full md:w-48 h-32 md:h-auto bg-slate-100">
-                  <img 
-                    src={booking.pkg?.imageUrl || `https://picsum.photos/seed/${booking.pkg?.name}/400/300`} 
-                    alt={booking.pkg?.name} 
+                  <img
+                    src={booking.pkg?.imageUrl || `https://picsum.photos/seed/${booking.pkg?.name}/400/300`}
+                    alt={booking.pkg?.name}
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
@@ -96,7 +96,7 @@ export function MyBookingsPage() {
                       </div>
                       <p className="text-sm text-slate-500 uppercase tracking-widest font-semibold">{booking.pkg?.type}</p>
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-6 text-sm">
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar className="h-4 w-4 text-brand-olive" />
@@ -118,11 +118,11 @@ export function MyBookingsPage() {
                       <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
                       <p className="text-2xl font-bold text-brand-olive">${(booking.pkg?.pricePerPerson || 0) * booking.guestCount}</p>
                     </div>
-                    
+
                     {booking.status === 'PENDING' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
                         onClick={() => setCancelBookingId(booking.id)}
                       >
@@ -153,8 +153,8 @@ export function MyBookingsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6">
-            <DialogClose asChild>
-              <Button variant="outline">Keep Reservation</Button>
+            <DialogClose render={<Button variant="outline" />}>
+              Keep Reservation
             </DialogClose>
             <Button variant="destructive" onClick={confirmCancel}>
               Yes, Cancel it
