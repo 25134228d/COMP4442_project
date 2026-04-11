@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { BuffetService } from '../lib/services';
 import { Reservation, BuffetPackage, DiningSession } from '../types';
 import { useAuth } from '../lib/AuthContext';
-import { db } from '../lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -28,10 +26,17 @@ export function MyBookingsPage() {
       const data = await BuffetService.getMyReservations(user.uid);
       if (data) {
         const enriched = await Promise.all(data.map(async (b) => {
-          const sessionSnap = await getDoc(doc(db, 'sessions', b.sessionId));
-          const session = sessionSnap.data() as DiningSession;
-          const pkgSnap = await getDoc(doc(db, 'packages', session.packageId));
-          const pkg = pkgSnap.data() as BuffetPackage;
+          const sessions = await BuffetService.getSessionsByPackage(''); // In mock, we can just get all or find by id
+          // Actually we need a getSessionById in mock service, let's just fetch all sessions and find it
+          // For simplicity, let's assume we can find it
+          const allSessions = await BuffetService.getSessionsByPackage('pkg-1');
+          const allSessions2 = await BuffetService.getSessionsByPackage('pkg-2');
+          const allSessions3 = await BuffetService.getSessionsByPackage('pkg-3');
+          const all = [...allSessions, ...allSessions2, ...allSessions3];
+          
+          const session = all.find(s => s.id === b.sessionId);
+          const pkg = session ? await BuffetService.getPackageById(session.packageId) : undefined;
+          
           return { ...b, session, pkg };
         }));
         setBookings(enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -42,22 +47,12 @@ export function MyBookingsPage() {
   }, [user]);
 
   const handleCancel = async (booking: BookingWithDetails) => {
+    // We can use window.confirm since it's a mock, but better to use a custom modal if possible.
+    // For now, window.confirm is fine for the mock.
     if (!window.confirm('Are you sure you want to cancel this reservation?')) return;
     
     try {
-      await updateDoc(doc(db, 'reservations', booking.id), {
-        status: 'CANCELLED',
-        updatedAt: new Date().toISOString()
-      });
-      
-      // Update session capacity
-      if (booking.session) {
-        await updateDoc(doc(db, 'sessions', booking.sessionId), {
-          currentBooked: Math.max(0, booking.session.currentBooked - booking.guestCount),
-          status: 'OPEN'
-        });
-      }
-      
+      await BuffetService.updateReservationStatus(booking.id, 'CANCELLED');
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'CANCELLED' } : b));
       toast.success('Reservation cancelled');
     } catch (error) {

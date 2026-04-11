@@ -5,7 +5,6 @@ import { Navbar } from './components/Navbar';
 import { Toaster } from './components/ui/sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { useEffect } from 'react';
-import { seedInitialData } from './lib/SeedData';
 
 // Real Pages
 import { HomePage } from './pages/HomePage';
@@ -28,10 +27,6 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
 };
 
 export default function App() {
-  useEffect(() => {
-    seedInitialData();
-  }, []);
-
   return (
     <AuthProvider>
       <Router>
@@ -87,3 +82,4 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
     {children}
   </motion.div>
 );
+

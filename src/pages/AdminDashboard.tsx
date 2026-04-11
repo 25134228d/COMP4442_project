@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../lib/firebase';
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, query, orderBy, getDoc } from 'firebase/firestore';
-import { BuffetPackage, DiningSession, Reservation, UserProfile } from '../types';
+import { BuffetService } from '../lib/services';
+import { BuffetPackage, DiningSession, Reservation } from '../types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -20,32 +19,35 @@ export function AdminDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const pkgSnap = await getDocs(collection(db, 'packages'));
-      setPackages(pkgSnap.docs.map(d => ({ id: d.id, ...d.data() } as BuffetPackage)));
+      const pkgs = await BuffetService.getActivePackages();
+      setPackages(pkgs || []);
 
-      const sessionSnap = await getDocs(collection(db, 'sessions'));
-      setSessions(sessionSnap.docs.map(d => ({ id: d.id, ...d.data() } as DiningSession)));
+      // Mock getting all sessions
+      const allSessions: DiningSession[] = [];
+      for (const pkg of pkgs || []) {
+        const s = await BuffetService.getSessionsByPackage(pkg.id);
+        if (s) allSessions.push(...s);
+      }
+      setSessions(allSessions);
 
-      const resSnap = await getDocs(query(collection(db, 'reservations'), orderBy('createdAt', 'desc')));
-      const resData = await Promise.all(resSnap.docs.map(async (d) => {
-        const data = d.data();
-        const userSnap = await getDoc(doc(db, 'users', data.userId));
-        const sessionSnap = await getDoc(doc(db, 'sessions', data.sessionId));
+      const resDataRaw = await BuffetService.getAllReservations();
+      const resData = await Promise.all(resDataRaw.map(async (d) => {
+        const session = allSessions.find(s => s.id === d.sessionId);
         return { 
           id: d.id, 
-          ...data, 
-          userName: userSnap.data()?.name || 'Unknown',
-          sessionInfo: sessionSnap.data() ? `${sessionSnap.data().sessionDate} ${sessionSnap.data().startTime}` : 'N/A'
+          ...d, 
+          userName: d.userId === 'admin-uid-123' ? 'Admin User' : 'Customer User', // Mock user name
+          sessionInfo: session ? `${session.sessionDate} ${session.startTime}` : 'N/A'
         };
       }));
-      setReservations(resData);
+      setReservations(resData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       setLoading(false);
     };
     fetchData();
   }, []);
 
   const handleConfirmReservation = async (id: string) => {
-    await updateDoc(doc(db, 'reservations', id), { status: 'CONFIRMED' });
+    await BuffetService.updateReservationStatus(id, 'CONFIRMED');
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'CONFIRMED' } : r));
     toast.success('Reservation confirmed');
   };
@@ -173,5 +175,3 @@ export function AdminDashboard() {
     </div>
   );
 }
-
-// Helper to fetch doc (needed for enriched reservations)

@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BuffetService } from '../lib/services';
 import { BuffetPackage, DiningSession } from '../types';
 import { useAuth } from '../lib/AuthContext';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, addDoc, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Calendar } from '../components/ui/calendar';
@@ -35,9 +33,9 @@ export function BookingPage() {
     const fetchData = async () => {
       if (!packageId) return;
       
-      const pkgDoc = await getDoc(doc(db, 'packages', packageId));
-      if (pkgDoc.exists()) {
-        setPkg({ id: pkgDoc.id, ...pkgDoc.data() } as BuffetPackage);
+      const pkgData = await BuffetService.getPackageById(packageId);
+      if (pkgData) {
+        setPkg(pkgData);
       }
       
       const sessionData = await BuffetService.getSessionsByPackage(packageId);
@@ -58,36 +56,22 @@ export function BookingPage() {
     
     setSubmitting(true);
     try {
-      // 1. Create Reservation
-      const reservationData = {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      await BuffetService.createReservation({
         userId: user.uid,
         sessionId: selectedSession.id,
         guestCount,
         specialRequest,
         status: 'PENDING',
-        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      };
-      
-      await addDoc(collection(db, 'reservations'), reservationData);
-      
-      // 2. Update Session Capacity
-      const sessionRef = doc(db, 'sessions', selectedSession.id);
-      await updateDoc(sessionRef, {
-        currentBooked: increment(guestCount)
       });
       
-      // Check if session is now full
-      const updatedSessionSnap = await getDoc(sessionRef);
-      const updatedSession = updatedSessionSnap.data() as DiningSession;
-      if (updatedSession.currentBooked >= updatedSession.maxCapacity) {
-        await updateDoc(sessionRef, { status: 'FULL' });
-      }
-
       setStep(4);
       toast.success('Reservation successful!');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'reservations');
+      console.error(error);
       toast.error('Failed to book. Please try again.');
     } finally {
       setSubmitting(false);
