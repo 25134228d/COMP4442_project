@@ -48,5 +48,5 @@ Once the server starts, open your browser and go to `http://localhost:3000` to p
 
 This project currently uses LocalStorage to simulate the backend and authentication state. You can use the following test accounts on the sign-in page:
 
-*   **Admin Account:** `admin@test.com` (or `tony107107107@gmail.com`)
+*   **Admin Account:** `admin@test.com`
 *   **Customer Account:** `user@test.com` (or any other email address)
