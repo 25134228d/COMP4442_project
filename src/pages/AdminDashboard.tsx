@@ -33,11 +33,11 @@ export function AdminDashboard() {
   const [sessionEndTime, setSessionEndTime] = useState('');
   const [sessionStatusFilter, setSessionStatusFilter] = useState('ALL');
   const [sessionPackageFilter, setSessionPackageFilter] = useState('ALL');
-  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity' | 'package' | 'time'>('date');
   const [sessionSortOrder, setSessionSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity' | 'package' | 'time'>('date');
 
   const [deletePackageId, setDeletePackageId] = useState<string | null>(null);
-  
+
   // Package state
   const [isCreatePackageOpen, setIsCreatePackageOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<BuffetPackage | null>(null);
@@ -73,9 +73,8 @@ export function AdminDashboard() {
       const resDataRaw = await BuffetService.getAllReservations();
       const resData = await Promise.all(resDataRaw.map(async (d) => {
         const session = allSessions.find(s => s.id === d.sessionId);
-        return { 
-          id: d.id, 
-          ...d, 
+        return {
+          ...d,
           userName: d.userId === 'admin-uid-123' ? 'Admin User' : 'Customer User', // Mock user name
           sessionInfo: session ? `${session.sessionDate} ${session.startTime}` : 'N/A',
           dateForSort: session ? session.sessionDate : d.createdAt
@@ -118,7 +117,7 @@ export function AdminDashboard() {
       currentBooked: 0,
       status: newSession.status as 'OPEN' | 'FULL' | 'CANCELLED'
     };
-    
+
     const createdSession = await BuffetService.createSession(session);
     setSessions(prev => [createdSession, ...prev]);
     toast.success('Session created successfully');
@@ -140,7 +139,7 @@ export function AdminDashboard() {
       toast.error('End time must be after start time');
       return;
     }
-    
+
     await BuffetService.updateSession(editingSession);
     setSessions(prev => prev.map(s => s.id === editingSession.id ? editingSession : s));
     toast.success('Session updated successfully');
@@ -161,7 +160,7 @@ export function AdminDashboard() {
       imageUrl: newPackage.imageUrl || `https://picsum.photos/seed/${newPackage.name}/400/300`,
       type: newPackage.type as 'BRUNCH' | 'LUNCH' | 'DINNER'
     };
-    
+
     try {
       const createdPkg = await BuffetService.createPackage(pkg);
       setPackages(prev => [createdPkg, ...prev]);
@@ -198,7 +197,7 @@ export function AdminDashboard() {
         let width = img.width;
         let height = img.height;
         const MAX_SIZE = 400;
-        
+
         if (width > height) {
           if (width > MAX_SIZE) {
             height *= MAX_SIZE / width;
@@ -210,12 +209,12 @@ export function AdminDashboard() {
             height = MAX_SIZE;
           }
         }
-        
+
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        
+
         const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
         callback(dataUrl);
       };
@@ -267,7 +266,7 @@ export function AdminDashboard() {
       let matchesStart = true;
       let matchesEnd = true;
       let matchesStatus = true;
-      
+
       if (resStartDate) {
         matchesStart = new Date(res.dateForSort) >= new Date(resStartDate);
       }
@@ -277,19 +276,8 @@ export function AdminDashboard() {
       if (resStatusFilter !== 'ALL') {
         matchesStatus = res.status === resStatusFilter;
       }
-      
+
       return matchesStart && matchesEnd && matchesStatus;
-    })
-    .sort((a, b) => {
-      let comparison = 0;
-      if (resSortField === 'date') {
-        comparison = new Date(a.dateForSort).getTime() - new Date(b.dateForSort).getTime();
-      } else if (resSortField === 'name') {
-        comparison = a.userName.localeCompare(b.userName);
-      } else if (resSortField === 'status') {
-        comparison = a.status.localeCompare(b.status);
-      }
-      return resSortOrder === 'asc' ? comparison : -comparison;
     });
 
   const sortedSessions = [...sessions]
@@ -354,13 +342,13 @@ export function AdminDashboard() {
         <TabsContent value="reservations">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl serif">Reservations</h2>
-            
+
             <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-xl shadow-sm border">
               <div className="flex items-center gap-2">
                 <Label htmlFor="res-start-date" className="text-xs text-slate-500">From</Label>
-                <Input 
-                  id="res-start-date" 
-                  type="date" 
+                <Input
+                  id="res-start-date"
+                  type="date"
                   className="h-8 text-sm w-36"
                   value={resStartDate}
                   onChange={(e) => setResStartDate(e.target.value)}
@@ -368,17 +356,18 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <Label htmlFor="res-end-date" className="text-xs text-slate-500">To</Label>
-                <Input 
-                  id="res-end-date" 
-                  type="date" 
+                <Input
+                  id="res-end-date"
+                  type="date"
                   className="h-8 text-sm w-36"
                   value={resEndDate}
                   onChange={(e) => setResEndDate(e.target.value)}
                 />
               </div>
+
               <div className="flex items-center gap-2">
                 <Label className="text-xs text-slate-500">Status</Label>
-                <Select value={resStatusFilter} onValueChange={setResStatusFilter}>
+                <Select value={resStatusFilter} onValueChange={(v) => setResStatusFilter(v || 'ALL')}>
                   <SelectTrigger className="h-8 w-32 text-sm">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
@@ -479,15 +468,15 @@ export function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="sessions">
-           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl serif">Dining Sessions</h2>
-            
+
             <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-xl shadow-sm border">
               <div className="flex items-center gap-2">
                 <Label htmlFor="start-date" className="text-xs text-slate-500">From</Label>
-                <Input 
-                  id="start-date" 
-                  type="date" 
+                <Input
+                  id="start-date"
+                  type="date"
                   className="h-8 text-sm w-36"
                   value={sessionStartDate}
                   onChange={(e) => setSessionStartDate(e.target.value)}
@@ -495,9 +484,9 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <Label htmlFor="end-date" className="text-xs text-slate-500">To</Label>
-                <Input 
-                  id="end-date" 
-                  type="date" 
+                <Input
+                  id="end-date"
+                  type="date"
                   className="h-8 text-sm w-36"
                   value={sessionEndDate}
                   onChange={(e) => setSessionEndDate(e.target.value)}
@@ -505,7 +494,7 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <Label className="text-xs text-slate-500">Package</Label>
-                <Select value={sessionPackageFilter} onValueChange={setSessionPackageFilter}>
+                <Select value={sessionPackageFilter} onValueChange={(v) => setSessionPackageFilter(v || 'ALL')}>
                   <SelectTrigger className="h-8 w-40 text-sm">
                     <SelectValue placeholder="All Packages" />
                   </SelectTrigger>
@@ -519,7 +508,7 @@ export function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <Label className="text-xs text-slate-500">Status</Label>
-                <Select value={sessionStatusFilter} onValueChange={setSessionStatusFilter}>
+                <Select value={sessionStatusFilter} onValueChange={(v) => setSessionStatusFilter(v || 'ALL')}>
                   <SelectTrigger className="h-8 w-32 text-sm">
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
@@ -617,7 +606,7 @@ export function AdminDashboard() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label>Package</Label>
-              <Select value={newSession.packageId} onValueChange={(v) => setNewSession({...newSession, packageId: v})}>
+              <Select value={newSession.packageId} onValueChange={(v) => setNewSession({ ...newSession, packageId: v || '' })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
@@ -630,26 +619,26 @@ export function AdminDashboard() {
             </div>
             <div className="space-y-2">
               <Label>Date</Label>
-              <Input type="date" value={newSession.sessionDate} onChange={(e) => setNewSession({...newSession, sessionDate: e.target.value})} />
+              <Input type="date" value={newSession.sessionDate} onChange={(e) => setNewSession({ ...newSession, sessionDate: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Start Time</Label>
-                <Input type="time" value={newSession.startTime} onChange={(e) => setNewSession({...newSession, startTime: e.target.value})} />
+                <Input type="time" value={newSession.startTime} onChange={(e) => setNewSession({ ...newSession, startTime: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>End Time</Label>
-                <Input type="time" value={newSession.endTime} onChange={(e) => setNewSession({...newSession, endTime: e.target.value})} />
+                <Input type="time" value={newSession.endTime} onChange={(e) => setNewSession({ ...newSession, endTime: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Max Capacity</Label>
-                <Input type="number" min="1" value={newSession.maxCapacity} onChange={(e) => setNewSession({...newSession, maxCapacity: Number(e.target.value)})} />
+                <Input type="number" min="1" value={newSession.maxCapacity} onChange={(e) => setNewSession({ ...newSession, maxCapacity: Number(e.target.value) })} />
               </div>
               <div className="space-y-2">
                 <Label>Initial Status</Label>
-                <Select value={newSession.status} onValueChange={(v) => setNewSession({...newSession, status: v})}>
+                <Select value={newSession.status} onValueChange={(v) => setNewSession({ ...newSession, status: v || 'OPEN' })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -684,7 +673,7 @@ export function AdminDashboard() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label>Package</Label>
-                <Select value={editingSession.packageId} onValueChange={(v) => setEditingSession({...editingSession, packageId: v})}>
+                <Select value={editingSession.packageId} onValueChange={(v) => setEditingSession({ ...editingSession, packageId: v || '' })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a package" />
                   </SelectTrigger>
@@ -697,26 +686,26 @@ export function AdminDashboard() {
               </div>
               <div className="space-y-2">
                 <Label>Date</Label>
-                <Input type="date" value={editingSession.sessionDate} onChange={(e) => setEditingSession({...editingSession, sessionDate: e.target.value})} />
+                <Input type="date" value={editingSession.sessionDate} onChange={(e) => setEditingSession({ ...editingSession, sessionDate: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Start Time</Label>
-                  <Input type="time" value={editingSession.startTime} onChange={(e) => setEditingSession({...editingSession, startTime: e.target.value})} />
+                  <Input type="time" value={editingSession.startTime} onChange={(e) => setEditingSession({ ...editingSession, startTime: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label>End Time</Label>
-                  <Input type="time" value={editingSession.endTime} onChange={(e) => setEditingSession({...editingSession, endTime: e.target.value})} />
+                  <Input type="time" value={editingSession.endTime} onChange={(e) => setEditingSession({ ...editingSession, endTime: e.target.value })} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Max Capacity</Label>
-                  <Input type="number" min="1" value={editingSession.maxCapacity} onChange={(e) => setEditingSession({...editingSession, maxCapacity: Number(e.target.value)})} />
+                  <Input type="number" min="1" value={editingSession.maxCapacity} onChange={(e) => setEditingSession({ ...editingSession, maxCapacity: Number(e.target.value) })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select value={editingSession.status} onValueChange={(v) => setEditingSession({...editingSession, status: v as any})}>
+                  <Select value={editingSession.status} onValueChange={(v) => setEditingSession({ ...editingSession, status: v as any })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -751,20 +740,20 @@ export function AdminDashboard() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label>Package Name</Label>
-              <Input value={newPackage.name} onChange={e => setNewPackage({...newPackage, name: e.target.value})} />
+              <Input value={newPackage.name} onChange={e => setNewPackage({ ...newPackage, name: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Input value={newPackage.description} onChange={e => setNewPackage({...newPackage, description: e.target.value})} />
+              <Input value={newPackage.description} onChange={e => setNewPackage({ ...newPackage, description: e.target.value })} />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Price ($)</Label>
-                <Input type="number" min="1" value={newPackage.pricePerPerson} onChange={e => setNewPackage({...newPackage, pricePerPerson: Number(e.target.value)})} />
+                <Input type="number" min="1" value={newPackage.pricePerPerson} onChange={e => setNewPackage({ ...newPackage, pricePerPerson: Number(e.target.value) })} />
               </div>
               <div className="space-y-2">
                 <Label>Type</Label>
-                <Select value={newPackage.type} onValueChange={v => setNewPackage({...newPackage, type: v})}>
+                <Select value={newPackage.type} onValueChange={v => setNewPackage({ ...newPackage, type: v || 'DINNER' })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="BRUNCH">Brunch</SelectItem>
@@ -775,7 +764,7 @@ export function AdminDashboard() {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={newPackage.isActive ? 'active' : 'hidden'} onValueChange={v => setNewPackage({...newPackage, isActive: v === 'active'})}>
+                <Select value={newPackage.isActive ? 'active' : 'hidden'} onValueChange={v => setNewPackage({ ...newPackage, isActive: v === 'active' })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
@@ -818,20 +807,20 @@ export function AdminDashboard() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label>Package Name</Label>
-                <Input value={editingPackage.name} onChange={e => setEditingPackage({...editingPackage, name: e.target.value})} />
+                <Input value={editingPackage.name} onChange={e => setEditingPackage({ ...editingPackage, name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Input value={editingPackage.description} onChange={e => setEditingPackage({...editingPackage, description: e.target.value})} />
+                <Input value={editingPackage.description} onChange={e => setEditingPackage({ ...editingPackage, description: e.target.value })} />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Price ($)</Label>
-                  <Input type="number" min="1" value={editingPackage.pricePerPerson} onChange={e => setEditingPackage({...editingPackage, pricePerPerson: Number(e.target.value)})} />
+                  <Input type="number" min="1" value={editingPackage.pricePerPerson} onChange={e => setEditingPackage({ ...editingPackage, pricePerPerson: Number(e.target.value) })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Type</Label>
-                  <Select value={editingPackage.type} onValueChange={v => setEditingPackage({...editingPackage, type: v as any})}>
+                  <Select value={editingPackage.type} onValueChange={v => setEditingPackage({ ...editingPackage, type: v as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="BRUNCH">Brunch</SelectItem>
@@ -842,7 +831,7 @@ export function AdminDashboard() {
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select value={editingPackage.isActive ? 'active' : 'hidden'} onValueChange={v => setEditingPackage({...editingPackage, isActive: v === 'active'})}>
+                  <Select value={editingPackage.isActive ? 'active' : 'hidden'} onValueChange={v => setEditingPackage({ ...editingPackage, isActive: v === 'active' })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
@@ -878,13 +867,13 @@ export function AdminDashboard() {
 
 function SessionStatusBadge({ status }: { status: string }) {
   switch (status) {
-    case 'OPEN': 
+    case 'OPEN':
       return <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100" variant="outline">OPEN</Badge>;
-    case 'FULL': 
+    case 'FULL':
       return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100" variant="outline">FULL</Badge>;
-    case 'CANCELLED': 
+    case 'CANCELLED':
       return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100" variant="outline">CANCELLED</Badge>;
-    default: 
+    default:
       return <Badge variant="secondary">{status}</Badge>;
   }
 }
