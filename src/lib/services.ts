@@ -77,6 +77,10 @@ export const BuffetService = {
     return getMockPackages().filter(p => p.isActive);
   },
 
+  async getAllPackages() {
+    return getMockPackages();
+  },
+
   async getPackageById(id: string) {
     return getMockPackages().find(p => p.id === id);
   },
@@ -84,8 +88,29 @@ export const BuffetService = {
   async createPackage(pkg: BuffetPackage) {
     const packages = getMockPackages();
     packages.unshift(pkg);
-    localStorage.setItem('mockPackages', JSON.stringify(packages));
+    try {
+      localStorage.setItem('mockPackages', JSON.stringify(packages));
+    } catch (e) {
+      console.error("Storage quota exceeded", e);
+      throw new Error("Storage quota exceeded. Please try uploading a smaller image.");
+    }
     return pkg;
+  },
+
+  async updatePackage(pkg: BuffetPackage) {
+    const packages = getMockPackages();
+    const index = packages.findIndex(p => p.id === pkg.id);
+    if (index !== -1) {
+      packages[index] = pkg;
+      try {
+        localStorage.setItem('mockPackages', JSON.stringify(packages));
+        return true;
+      } catch (e) {
+        console.error("Storage quota exceeded", e);
+        throw new Error("Storage quota exceeded. Please try uploading a smaller image.");
+      }
+    }
+    return false;
   },
 
   async createSession(session: DiningSession) {

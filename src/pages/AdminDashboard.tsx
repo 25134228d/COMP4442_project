@@ -38,12 +38,14 @@ export function AdminDashboard() {
   
   // Package state
   const [isCreatePackageOpen, setIsCreatePackageOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<BuffetPackage | null>(null);
   const [newPackage, setNewPackage] = useState({
     name: '',
     description: '',
     pricePerPerson: 0,
     isActive: true,
-    imageUrl: ''
+    imageUrl: '',
+    type: 'DINNER'
   });
 
   // Session state
@@ -60,7 +62,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const pkgs = await BuffetService.getActivePackages();
+      const pkgs = await BuffetService.getAllPackages();
       setPackages(pkgs || []);
 
       const allSessions = await BuffetService.getAllSessions();
@@ -154,24 +156,82 @@ export function AdminDashboard() {
       pricePerPerson: Number(newPackage.pricePerPerson),
       isActive: newPackage.isActive,
       imageUrl: newPackage.imageUrl || `https://picsum.photos/seed/${newPackage.name}/400/300`,
-      type: 'DINNER'
+      type: newPackage.type as 'BRUNCH' | 'LUNCH' | 'DINNER'
     };
     
-    const createdPkg = await BuffetService.createPackage(pkg);
-    setPackages(prev => [createdPkg, ...prev]);
-    toast.success('Package created successfully');
-    setIsCreatePackageOpen(false);
-    setNewPackage({ name: '', description: '', pricePerPerson: 0, isActive: true, imageUrl: '' });
+    try {
+      const createdPkg = await BuffetService.createPackage(pkg);
+      setPackages(prev => [createdPkg, ...prev]);
+      toast.success('Package created successfully');
+      setIsCreatePackageOpen(false);
+      setNewPackage({ name: '', description: '', pricePerPerson: 0, isActive: true, imageUrl: '', type: 'DINNER' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create package');
+    }
+  };
+
+  const handleUpdatePackage = async () => {
+    if (!editingPackage) return;
+    if (!editingPackage.name || !editingPackage.description || editingPackage.pricePerPerson <= 0) {
+      toast.error('Please fill in all required fields correctly');
+      return;
+    }
+    try {
+      await BuffetService.updatePackage(editingPackage);
+      setPackages(prev => prev.map(p => p.id === editingPackage.id ? editingPackage : p));
+      toast.success('Package updated successfully');
+      setEditingPackage(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update package');
+    }
+  };
+
+  const processImage = (file: File, callback: (dataUrl: string) => void) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_SIZE = 400;
+        
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+        callback(dataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewPackage({ ...newPackage, imageUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      processImage(file, (dataUrl) => setNewPackage({ ...newPackage, imageUrl: dataUrl }));
+    }
+  };
+
+  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingPackage) {
+      processImage(file, (dataUrl) => setEditingPackage({ ...editingPackage, imageUrl: dataUrl }));
     }
   };
 
@@ -344,9 +404,17 @@ export function AdminDashboard() {
         <TabsContent value="packages">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl serif">Buffet Packages</h2>
-            <Button className="bg-brand-olive rounded-full" onClick={() => setIsCreatePackageOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> New Package
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="text-red-500 border-red-200 hover:bg-red-50" onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}>
+                Reset All Data
+              </Button>
+              <Button className="bg-brand-olive rounded-full" onClick={() => setIsCreatePackageOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" /> New Package
+              </Button>
+            </div>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {packages.map((pkg) => (
@@ -367,7 +435,7 @@ export function AdminDashboard() {
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-brand-olive">${pkg.pricePerPerson}/pp</span>
                     <div className="flex gap-2">
-                      <Button size="icon" variant="ghost"><Edit className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setEditingPackage(pkg)}><Edit className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" className="text-red-500" onClick={() => setDeletePackageId(pkg.id)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
@@ -636,10 +704,21 @@ export function AdminDashboard() {
               <Label>Description</Label>
               <Input value={newPackage.description} onChange={e => setNewPackage({...newPackage, description: e.target.value})} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Price Per Person ($)</Label>
+                <Label>Price ($)</Label>
                 <Input type="number" min="1" value={newPackage.pricePerPerson} onChange={e => setNewPackage({...newPackage, pricePerPerson: Number(e.target.value)})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={newPackage.type} onValueChange={v => setNewPackage({...newPackage, type: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRUNCH">Brunch</SelectItem>
+                    <SelectItem value="LUNCH">Lunch</SelectItem>
+                    <SelectItem value="DINNER">Dinner</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -668,6 +747,74 @@ export function AdminDashboard() {
             </DialogClose>
             <Button className="bg-brand-olive hover:bg-brand-olive/90 text-white" onClick={handleCreatePackage}>
               Create Package
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Package Dialog */}
+      <Dialog open={!!editingPackage} onOpenChange={(open) => !open && setEditingPackage(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Package</DialogTitle>
+            <DialogDescription>
+              Modify the details of this buffet package.
+            </DialogDescription>
+          </DialogHeader>
+          {editingPackage && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Package Name</Label>
+                <Input value={editingPackage.name} onChange={e => setEditingPackage({...editingPackage, name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input value={editingPackage.description} onChange={e => setEditingPackage({...editingPackage, description: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Price ($)</Label>
+                  <Input type="number" min="1" value={editingPackage.pricePerPerson} onChange={e => setEditingPackage({...editingPackage, pricePerPerson: Number(e.target.value)})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select value={editingPackage.type} onValueChange={v => setEditingPackage({...editingPackage, type: v as any})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BRUNCH">Brunch</SelectItem>
+                      <SelectItem value="LUNCH">Lunch</SelectItem>
+                      <SelectItem value="DINNER">Dinner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={editingPackage.isActive ? 'active' : 'hidden'} onValueChange={v => setEditingPackage({...editingPackage, isActive: v === 'active'})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="hidden">Hidden</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Package Image</Label>
+                <Input type="file" accept="image/*" onChange={handleEditImageUpload} />
+                {editingPackage.imageUrl && (
+                  <div className="mt-2 w-full h-48 rounded-xl overflow-hidden border">
+                    <img src={editingPackage.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button className="bg-brand-olive hover:bg-brand-olive/90 text-white" onClick={handleUpdatePackage}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -46,10 +46,17 @@ export function BookingPage() {
     fetchData();
   }, [packageId]);
 
-  const availableSessions = sessions.filter(s => {
-    if (!selectedDate) return false;
-    return s.sessionDate === format(selectedDate, 'yyyy-MM-dd') && s.status === 'OPEN';
-  });
+  const openSessions = sessions.filter(s => s.status === 'OPEN' && new Date(s.sessionDate) >= new Date(new Date().setHours(0,0,0,0)));
+  
+  const sessionsByDate = openSessions.reduce((acc, session) => {
+    if (!acc[session.sessionDate]) {
+      acc[session.sessionDate] = [];
+    }
+    acc[session.sessionDate].push(session);
+    return acc;
+  }, {} as Record<string, DiningSession[]>);
+
+  const sortedDates = Object.keys(sessionsByDate).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
   const handleBooking = async () => {
     if (!user || !selectedSession || !pkg) return;
@@ -105,65 +112,70 @@ export function BookingPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="grid md:grid-cols-2 gap-8"
+            className="max-w-3xl mx-auto"
           >
-            <Card className="border-none shadow-xl bg-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 serif">
-                  <CalendarIcon className="h-5 w-5 text-brand-olive" /> Select Date
+            <Card className="border-none shadow-xl bg-white mb-8">
+              <CardHeader className="bg-slate-50 border-b pb-6">
+                <CardTitle className="flex items-center gap-2 serif text-2xl">
+                  <CalendarIcon className="h-6 w-6 text-brand-olive" /> Select a Session
                 </CardTitle>
+                <p className="text-slate-500 mt-2">Choose from our available dates and times below.</p>
               </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border"
-                  disabled={(date) => date < new Date()}
-                />
+              <CardContent className="p-0">
+                {sortedDates.length > 0 ? (
+                  <div className="divide-y">
+                    {sortedDates.map(date => (
+                      <div key={date} className="p-6">
+                        <h3 className="text-lg font-bold serif mb-4 text-slate-800">
+                          {format(new Date(date), 'EEEE, MMMM do, yyyy')}
+                        </h3>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          {sessionsByDate[date].map(session => (
+                            <button
+                              key={session.id}
+                              onClick={() => {
+                                setSelectedSession(session);
+                                setSelectedDate(new Date(session.sessionDate));
+                              }}
+                              className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
+                                selectedSession?.id === session.id 
+                                  ? 'border-brand-olive bg-brand-olive/5 ring-1 ring-brand-olive' 
+                                  : 'border-slate-100 hover:border-slate-300 bg-white'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start w-full mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-brand-olive" />
+                                  <span className="font-bold">{session.startTime} - {session.endTime}</span>
+                                </div>
+                                <Badge variant="outline" className="text-[10px] uppercase tracking-tighter bg-white">
+                                  {session.maxCapacity - session.currentBooked} seats left
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-2">
+                                {pkg.type} SESSION
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center">
+                    <p className="text-slate-500 text-lg">No sessions available for this package.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold serif flex items-center gap-2">
-                <Clock className="h-5 w-5 text-brand-olive" /> Available Sessions
-              </h3>
-              {availableSessions.length > 0 ? (
-                <div className="grid gap-3">
-                  {availableSessions.map((session) => (
-                    <button
-                      key={session.id}
-                      onClick={() => setSelectedSession(session)}
-                      className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                        selectedSession?.id === session.id 
-                          ? 'border-brand-olive bg-brand-olive/5 ring-1 ring-brand-olive' 
-                          : 'border-slate-100 hover:border-slate-200 bg-white'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-lg">{session.startTime} - {session.endTime}</span>
-                        <Badge variant="outline" className="text-[10px] uppercase tracking-tighter">
-                          {session.maxCapacity - session.currentBooked} seats left
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
-                        {pkg.type} SESSION
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                  <p className="text-slate-500">No sessions available for this date.</p>
-                </div>
-              )}
-              
+            <div className="flex justify-end">
               <Button 
-                className="w-full bg-brand-olive h-12 rounded-full" 
+                className="w-full sm:w-auto bg-brand-olive h-12 rounded-full px-8 text-lg" 
                 disabled={!selectedSession}
                 onClick={() => setStep(2)}
               >
-                Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                Next Step <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </motion.div>

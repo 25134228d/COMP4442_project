@@ -27,13 +27,9 @@ export function MyBookingsPage() {
       if (!user) return;
       const data = await BuffetService.getMyReservations(user.uid);
       if (data) {
+        const allSessions = await BuffetService.getAllSessions();
         const enriched = await Promise.all(data.map(async (b) => {
-          const allSessions = await BuffetService.getSessionsByPackage('pkg-1');
-          const allSessions2 = await BuffetService.getSessionsByPackage('pkg-2');
-          const allSessions3 = await BuffetService.getSessionsByPackage('pkg-3');
-          const all = [...allSessions, ...allSessions2, ...allSessions3];
-          
-          const session = all.find(s => s.id === b.sessionId);
+          const session = allSessions.find(s => s.id === b.sessionId);
           const pkg = session ? await BuffetService.getPackageById(session.packageId) : undefined;
           
           return { ...b, session, pkg };
