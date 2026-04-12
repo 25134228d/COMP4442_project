@@ -138,7 +138,7 @@ export function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-lg">Location</h3>
-                    <p className="text-slate-600">123 Culinary Avenue<br />Gourmet District, Foodville 90210</p>
+                    <p className="text-slate-600">11 Yuk Choi Road, Hung Hom, Kowloon, Hong Kong</p>
                   </div>
                 </div>
 
@@ -148,7 +148,7 @@ export function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-lg">Phone</h3>
-                    <p className="text-slate-600">(555) 123-4567</p>
+                    <p className="text-slate-600">(852) 1234 5678</p>
                   </div>
                 </div>
 
@@ -158,7 +158,7 @@ export function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-lg">Email</h3>
-                    <p className="text-slate-600">hello@buffetease.com</p>
+                    <p className="text-slate-600">25134228d@connect.polyu.edu.hk<br /> 25127648d@connect.polyu.edu.hk <br /> 25127632d@connect.polyu.edu.hk<br />25127625d@connect.polyu.edu.hk</p>
                   </div>
                 </div>
               </div>

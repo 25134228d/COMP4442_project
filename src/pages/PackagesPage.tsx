@@ -23,7 +23,7 @@ export function PackagesPage() {
 
   if (loading) {
     return (
-      <div className="container py-20 flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="container mx-auto py-20 flex flex-col items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-olive"></div>
         <p className="mt-4 text-slate-500 font-medium">Discovering flavors...</p>
       </div>

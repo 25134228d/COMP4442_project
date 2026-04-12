@@ -35,7 +35,7 @@ export function AuthPage() {
   };
 
   return (
-    <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)] px-4">
+    <div className="w-full flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 mx-auto">
       <Card className="w-full max-w-md border-none shadow-2xl bg-white/50 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto bg-brand-olive w-12 h-12 rounded-full flex items-center justify-center">
