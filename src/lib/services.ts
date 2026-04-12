@@ -113,6 +113,16 @@ export const BuffetService = {
     return false;
   },
 
+  async deletePackage(id: string) {
+    const packages = getMockPackages();
+    const filtered = packages.filter(p => p.id !== id);
+    if (filtered.length !== packages.length) {
+      localStorage.setItem('mockPackages', JSON.stringify(filtered));
+      return true;
+    }
+    return false;
+  },
+
   async createSession(session: DiningSession) {
     const sessions = getMockSessions();
     sessions.unshift(session);
@@ -164,6 +174,9 @@ export const BuffetService = {
     const sessionIndex = sessions.findIndex(s => s.id === reservation.sessionId);
     if (sessionIndex !== -1) {
       sessions[sessionIndex].currentBooked += reservation.guestCount;
+      if (sessions[sessionIndex].currentBooked >= sessions[sessionIndex].maxCapacity) {
+        sessions[sessionIndex].status = 'FULL';
+      }
       localStorage.setItem('mockSessions', JSON.stringify(sessions));
     }
 
@@ -185,6 +198,9 @@ export const BuffetService = {
         const sessionIndex = sessions.findIndex(s => s.id === reservations[index].sessionId);
         if (sessionIndex !== -1) {
           sessions[sessionIndex].currentBooked -= reservations[index].guestCount;
+          if (sessions[sessionIndex].currentBooked < sessions[sessionIndex].maxCapacity && sessions[sessionIndex].status === 'FULL') {
+            sessions[sessionIndex].status = 'OPEN';
+          }
           localStorage.setItem('mockSessions', JSON.stringify(sessions));
         }
       }

@@ -28,6 +28,8 @@ export function BookingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,7 +48,16 @@ export function BookingPage() {
     fetchData();
   }, [packageId]);
 
-  const openSessions = sessions.filter(s => s.status === 'OPEN' && new Date(s.sessionDate) >= new Date(new Date().setHours(0,0,0,0)));
+  const openSessions = sessions.filter(s => {
+    if (s.status !== 'OPEN') return false;
+    const sessionDate = new Date(s.sessionDate);
+    if (sessionDate < new Date(new Date().setHours(0,0,0,0))) return false;
+    
+    if (filterStartDate && sessionDate < new Date(filterStartDate)) return false;
+    if (filterEndDate && sessionDate > new Date(filterEndDate)) return false;
+    
+    return true;
+  });
   
   const sessionsByDate = openSessions.reduce((acc, session) => {
     if (!acc[session.sessionDate]) {
@@ -120,6 +131,39 @@ export function BookingPage() {
                   <CalendarIcon className="h-6 w-6 text-brand-olive" /> Select a Session
                 </CardTitle>
                 <p className="text-slate-500 mt-2">Choose from our available dates and times below.</p>
+                
+                <div className="mt-6 flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl shadow-sm border">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="filter-start-date" className="text-xs font-bold text-slate-500 uppercase">From</Label>
+                    <Input 
+                      id="filter-start-date" 
+                      type="date" 
+                      className="h-10 text-sm w-40"
+                      value={filterStartDate}
+                      onChange={(e) => setFilterStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="filter-end-date" className="text-xs font-bold text-slate-500 uppercase">To</Label>
+                    <Input 
+                      id="filter-end-date" 
+                      type="date" 
+                      className="h-10 text-sm w-40"
+                      value={filterEndDate}
+                      onChange={(e) => setFilterEndDate(e.target.value)}
+                    />
+                  </div>
+                  {(filterStartDate || filterEndDate) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => { setFilterStartDate(''); setFilterEndDate(''); }}
+                      className="text-slate-500 hover:text-slate-700"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {sortedDates.length > 0 ? (

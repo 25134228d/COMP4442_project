@@ -31,7 +31,8 @@ export function AdminDashboard() {
   const [sessionStartTime, setSessionStartTime] = useState('');
   const [sessionEndTime, setSessionEndTime] = useState('');
   const [sessionStatusFilter, setSessionStatusFilter] = useState('ALL');
-  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity'>('date');
+  const [sessionPackageFilter, setSessionPackageFilter] = useState('ALL');
+  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity' | 'package'>('date');
   const [sessionSortOrder, setSessionSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [deletePackageId, setDeletePackageId] = useState<string | null>(null);
@@ -85,8 +86,9 @@ export function AdminDashboard() {
     fetchData();
   }, []);
 
-  const confirmDeletePackage = () => {
+  const confirmDeletePackage = async () => {
     if (!deletePackageId) return;
+    await BuffetService.deletePackage(deletePackageId);
     setPackages(prev => prev.filter(p => p.id !== deletePackageId));
     toast.success('Package deleted successfully');
     setDeletePackageId(null);
@@ -235,7 +237,7 @@ export function AdminDashboard() {
     }
   };
 
-  const handleSessionSort = (field: 'date' | 'capacity') => {
+  const handleSessionSort = (field: 'date' | 'capacity' | 'package') => {
     if (sessionSortField === field) {
       setSessionSortOrder(sessionSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -290,6 +292,7 @@ export function AdminDashboard() {
       let matchesTimeStart = true;
       let matchesTimeEnd = true;
       let matchesStatus = true;
+      let matchesPackage = true;
 
       if (sessionStartDate) {
         matchesStart = new Date(session.sessionDate) >= new Date(sessionStartDate);
@@ -306,8 +309,11 @@ export function AdminDashboard() {
       if (sessionStatusFilter !== 'ALL') {
         matchesStatus = session.status === sessionStatusFilter;
       }
+      if (sessionPackageFilter !== 'ALL') {
+        matchesPackage = session.packageId === sessionPackageFilter;
+      }
 
-      return matchesStart && matchesEnd && matchesTimeStart && matchesTimeEnd && matchesStatus;
+      return matchesStart && matchesEnd && matchesTimeStart && matchesTimeEnd && matchesStatus && matchesPackage;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -315,6 +321,10 @@ export function AdminDashboard() {
         comparison = new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime();
       } else if (sessionSortField === 'capacity') {
         comparison = a.maxCapacity - b.maxCapacity;
+      } else if (sessionSortField === 'package') {
+        const pkgA = packages.find(p => p.id === a.packageId)?.name || '';
+        const pkgB = packages.find(p => p.id === b.packageId)?.name || '';
+        comparison = pkgA.localeCompare(pkgB);
       }
       return sessionSortOrder === 'asc' ? comparison : -comparison;
     });
@@ -471,6 +481,20 @@ export function AdminDashboard() {
                 />
               </div>
               <div className="flex items-center gap-2">
+                <Label className="text-xs text-slate-500">Package</Label>
+                <Select value={sessionPackageFilter} onValueChange={setSessionPackageFilter}>
+                  <SelectTrigger className="h-8 w-40 text-sm">
+                    <SelectValue placeholder="All Packages" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Packages</SelectItem>
+                    {packages.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
                 <Label className="text-xs text-slate-500">Status</Label>
                 <Select value={sessionStatusFilter} onValueChange={setSessionStatusFilter}>
                   <SelectTrigger className="h-8 w-32 text-sm">
@@ -494,6 +518,9 @@ export function AdminDashboard() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('package')}>
+                    <div className="flex items-center gap-1">Package <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
                   <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('date')}>
                     <div className="flex items-center gap-1">Date <ArrowUpDown className="h-3 w-3" /></div>
                   </TableHead>
@@ -508,6 +535,7 @@ export function AdminDashboard() {
               <TableBody>
                 {sortedSessions.map((session) => (
                   <TableRow key={session.id}>
+                    <TableCell className="font-medium">{packages.find(p => p.id === session.packageId)?.name || 'Unknown Package'}</TableCell>
                     <TableCell>{session.sessionDate}</TableCell>
                     <TableCell>{session.startTime} - {session.endTime}</TableCell>
                     <TableCell>{session.currentBooked} / {session.maxCapacity}</TableCell>
@@ -521,7 +549,7 @@ export function AdminDashboard() {
                 ))}
                 {sortedSessions.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
                       No sessions found matching your filters.
                     </TableCell>
                   </TableRow>
