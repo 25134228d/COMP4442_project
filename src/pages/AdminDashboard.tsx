@@ -8,14 +8,24 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Check, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, X, ArrowUpDown } from 'lucide-react';
 
 export function AdminDashboard() {
   const [packages, setPackages] = useState<BuffetPackage[]>([]);
   const [sessions, setSessions] = useState<DiningSession[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Sorting state for reservations
+  const [resSortField, setResSortField] = useState<'date' | 'name' | 'status'>('date');
+  const [resSortOrder, setResSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Filtering state for sessions
+  const [sessionStartDate, setSessionStartDate] = useState('');
+  const [sessionEndDate, setSessionEndDate] = useState('');
+  const [sessionStatusFilter, setSessionStatusFilter] = useState('ALL');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,10 +47,11 @@ export function AdminDashboard() {
           id: d.id, 
           ...d, 
           userName: d.userId === 'admin-uid-123' ? 'Admin User' : 'Customer User', // Mock user name
-          sessionInfo: session ? `${session.sessionDate} ${session.startTime}` : 'N/A'
+          sessionInfo: session ? `${session.sessionDate} ${session.startTime}` : 'N/A',
+          dateForSort: session ? session.sessionDate : d.createdAt
         };
       }));
-      setReservations(resData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setReservations(resData);
       setLoading(false);
     };
     fetchData();
@@ -51,6 +62,45 @@ export function AdminDashboard() {
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'CONFIRMED' } : r));
     toast.success('Reservation confirmed');
   };
+
+  const handleSort = (field: 'date' | 'name' | 'status') => {
+    if (resSortField === field) {
+      setResSortOrder(resSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setResSortField(field);
+      setResSortOrder('asc');
+    }
+  };
+
+  const sortedReservations = [...reservations].sort((a, b) => {
+    let comparison = 0;
+    if (resSortField === 'date') {
+      comparison = new Date(a.dateForSort).getTime() - new Date(b.dateForSort).getTime();
+    } else if (resSortField === 'name') {
+      comparison = a.userName.localeCompare(b.userName);
+    } else if (resSortField === 'status') {
+      comparison = a.status.localeCompare(b.status);
+    }
+    return resSortOrder === 'asc' ? comparison : -comparison;
+  });
+
+  const filteredSessions = sessions.filter(session => {
+    let matchesStart = true;
+    let matchesEnd = true;
+    let matchesStatus = true;
+
+    if (sessionStartDate) {
+      matchesStart = new Date(session.sessionDate) >= new Date(sessionStartDate);
+    }
+    if (sessionEndDate) {
+      matchesEnd = new Date(session.sessionDate) <= new Date(sessionEndDate);
+    }
+    if (sessionStatusFilter !== 'ALL') {
+      matchesStatus = session.status === sessionStatusFilter;
+    }
+
+    return matchesStart && matchesEnd && matchesStatus;
+  });
 
   if (loading) return <div className="container py-20 text-center">Loading dashboard...</div>;
 
@@ -70,15 +120,21 @@ export function AdminDashboard() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Session</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('name')}>
+                    <div className="flex items-center gap-1">Customer <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('date')}>
+                    <div className="flex items-center gap-1">Session <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
                   <TableHead>Guests</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('status')}>
+                    <div className="flex items-center gap-1">Status <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reservations.map((res) => (
+                {sortedReservations.map((res) => (
                   <TableRow key={res.id}>
                     <TableCell className="font-medium">{res.userName}</TableCell>
                     <TableCell>{res.sessionInfo}</TableCell>
@@ -134,8 +190,46 @@ export function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="sessions">
-           <div className="flex justify-between items-center mb-6">
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl serif">Dining Sessions</h2>
+            
+            <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-xl shadow-sm border">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="start-date" className="text-xs text-slate-500">From</Label>
+                <Input 
+                  id="start-date" 
+                  type="date" 
+                  className="h-8 text-sm w-36"
+                  value={sessionStartDate}
+                  onChange={(e) => setSessionStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="end-date" className="text-xs text-slate-500">To</Label>
+                <Input 
+                  id="end-date" 
+                  type="date" 
+                  className="h-8 text-sm w-36"
+                  value={sessionEndDate}
+                  onChange={(e) => setSessionEndDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-slate-500">Status</Label>
+                <Select value={sessionStatusFilter} onValueChange={setSessionStatusFilter}>
+                  <SelectTrigger className="h-8 w-32 text-sm">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="OPEN">Open</SelectItem>
+                    <SelectItem value="FULL">Full</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <Button className="bg-brand-olive rounded-full">
               <Plus className="h-4 w-4 mr-2" /> New Session
             </Button>
@@ -152,7 +246,7 @@ export function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sessions.map((session) => (
+                {filteredSessions.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell>{session.sessionDate}</TableCell>
                     <TableCell>{session.startTime} - {session.endTime}</TableCell>
@@ -167,6 +261,13 @@ export function AdminDashboard() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {filteredSessions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                      No sessions found matching your filters.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </Card>
