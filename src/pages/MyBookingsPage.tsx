@@ -153,8 +153,8 @@ export function MyBookingsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6">
-            <DialogClose asChild>
-              <Button variant="outline">Keep Reservation</Button>
+            <DialogClose render={<Button variant="outline" />}>
+              Keep Reservation
             </DialogClose>
             <Button variant="destructive" onClick={confirmCancel}>
               Yes, Cancel it

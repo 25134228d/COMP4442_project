@@ -9,8 +9,9 @@ import { Label } from '../components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Check, X, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, X, ArrowUpDown, Upload } from 'lucide-react';
 
 export function AdminDashboard() {
   const [packages, setPackages] = useState<BuffetPackage[]>([]);
@@ -18,27 +19,52 @@ export function AdminDashboard() {
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sorting state for reservations
+  // Sorting and filtering state for reservations
   const [resSortField, setResSortField] = useState<'date' | 'name' | 'status'>('date');
   const [resSortOrder, setResSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [resStartDate, setResStartDate] = useState('');
+  const [resEndDate, setResEndDate] = useState('');
 
-  // Filtering state for sessions
+  // Filtering and sorting state for sessions
   const [sessionStartDate, setSessionStartDate] = useState('');
   const [sessionEndDate, setSessionEndDate] = useState('');
+  const [sessionStartTime, setSessionStartTime] = useState('');
+  const [sessionEndTime, setSessionEndTime] = useState('');
   const [sessionStatusFilter, setSessionStatusFilter] = useState('ALL');
+  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity'>('date');
+  const [sessionSortOrder, setSessionSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const [deletePackageId, setDeletePackageId] = useState<string | null>(null);
+  
+  // Package state
+  const [isCreatePackageOpen, setIsCreatePackageOpen] = useState(false);
+  const [newPackage, setNewPackage] = useState({
+    name: '',
+    description: '',
+    pricePerPerson: 0,
+    isActive: true,
+    imageUrl: ''
+  });
+
+  // Session state
+  const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<DiningSession | null>(null);
+  const [newSession, setNewSession] = useState({
+    packageId: '',
+    sessionDate: '',
+    startTime: '',
+    endTime: '',
+    maxCapacity: 50,
+    status: 'OPEN'
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       const pkgs = await BuffetService.getActivePackages();
       setPackages(pkgs || []);
 
-      // Mock getting all sessions
-      const allSessions: DiningSession[] = [];
-      for (const pkg of pkgs || []) {
-        const s = await BuffetService.getSessionsByPackage(pkg.id);
-        if (s) allSessions.push(...s);
-      }
-      setSessions(allSessions);
+      const allSessions = await BuffetService.getAllSessions();
+      setSessions(allSessions || []);
 
       const resDataRaw = await BuffetService.getAllReservations();
       const resData = await Promise.all(resDataRaw.map(async (d) => {
@@ -57,6 +83,107 @@ export function AdminDashboard() {
     fetchData();
   }, []);
 
+  const confirmDeletePackage = () => {
+    if (!deletePackageId) return;
+    setPackages(prev => prev.filter(p => p.id !== deletePackageId));
+    toast.success('Package deleted successfully');
+    setDeletePackageId(null);
+  };
+
+  const handleCreateSession = async () => {
+    if (!newSession.packageId || !newSession.sessionDate || !newSession.startTime || !newSession.endTime) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    if (newSession.maxCapacity <= 0) {
+      toast.error('Max capacity must be a positive number');
+      return;
+    }
+    if (newSession.startTime >= newSession.endTime) {
+      toast.error('End time must be after start time');
+      return;
+    }
+    const session: DiningSession = {
+      id: `session-${Date.now()}`,
+      packageId: newSession.packageId,
+      sessionDate: newSession.sessionDate,
+      startTime: newSession.startTime,
+      endTime: newSession.endTime,
+      maxCapacity: Number(newSession.maxCapacity),
+      currentBooked: 0,
+      status: newSession.status as 'OPEN' | 'FULL' | 'CANCELLED'
+    };
+    
+    const createdSession = await BuffetService.createSession(session);
+    setSessions(prev => [createdSession, ...prev]);
+    toast.success('Session created successfully');
+    setIsCreateSessionOpen(false);
+    setNewSession({ packageId: '', sessionDate: '', startTime: '', endTime: '', maxCapacity: 50, status: 'OPEN' });
+  };
+
+  const handleUpdateSession = async () => {
+    if (!editingSession) return;
+    if (!editingSession.packageId || !editingSession.sessionDate || !editingSession.startTime || !editingSession.endTime) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    if (editingSession.maxCapacity <= 0) {
+      toast.error('Max capacity must be a positive number');
+      return;
+    }
+    if (editingSession.startTime >= editingSession.endTime) {
+      toast.error('End time must be after start time');
+      return;
+    }
+    
+    await BuffetService.updateSession(editingSession);
+    setSessions(prev => prev.map(s => s.id === editingSession.id ? editingSession : s));
+    toast.success('Session updated successfully');
+    setEditingSession(null);
+  };
+
+  const handleCreatePackage = async () => {
+    if (!newPackage.name || !newPackage.description || newPackage.pricePerPerson <= 0) {
+      toast.error('Please fill in all required fields correctly');
+      return;
+    }
+    const pkg: BuffetPackage = {
+      id: `pkg-${Date.now()}`,
+      name: newPackage.name,
+      description: newPackage.description,
+      pricePerPerson: Number(newPackage.pricePerPerson),
+      isActive: newPackage.isActive,
+      imageUrl: newPackage.imageUrl || `https://picsum.photos/seed/${newPackage.name}/400/300`,
+      type: 'DINNER'
+    };
+    
+    const createdPkg = await BuffetService.createPackage(pkg);
+    setPackages(prev => [createdPkg, ...prev]);
+    toast.success('Package created successfully');
+    setIsCreatePackageOpen(false);
+    setNewPackage({ name: '', description: '', pricePerPerson: 0, isActive: true, imageUrl: '' });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewPackage({ ...newPackage, imageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSessionSort = (field: 'date' | 'capacity') => {
+    if (sessionSortField === field) {
+      setSessionSortOrder(sessionSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSessionSortField(field);
+      setSessionSortOrder('asc');
+    }
+  };
+
   const handleConfirmReservation = async (id: string) => {
     await BuffetService.updateReservationStatus(id, 'CONFIRMED');
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'CONFIRMED' } : r));
@@ -72,35 +199,65 @@ export function AdminDashboard() {
     }
   };
 
-  const sortedReservations = [...reservations].sort((a, b) => {
-    let comparison = 0;
-    if (resSortField === 'date') {
-      comparison = new Date(a.dateForSort).getTime() - new Date(b.dateForSort).getTime();
-    } else if (resSortField === 'name') {
-      comparison = a.userName.localeCompare(b.userName);
-    } else if (resSortField === 'status') {
-      comparison = a.status.localeCompare(b.status);
-    }
-    return resSortOrder === 'asc' ? comparison : -comparison;
-  });
+  const sortedReservations = [...reservations]
+    .filter(res => {
+      let matchesStart = true;
+      let matchesEnd = true;
+      if (resStartDate) {
+        matchesStart = new Date(res.dateForSort) >= new Date(resStartDate);
+      }
+      if (resEndDate) {
+        matchesEnd = new Date(res.dateForSort) <= new Date(resEndDate);
+      }
+      return matchesStart && matchesEnd;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (resSortField === 'date') {
+        comparison = new Date(a.dateForSort).getTime() - new Date(b.dateForSort).getTime();
+      } else if (resSortField === 'name') {
+        comparison = a.userName.localeCompare(b.userName);
+      } else if (resSortField === 'status') {
+        comparison = a.status.localeCompare(b.status);
+      }
+      return resSortOrder === 'asc' ? comparison : -comparison;
+    });
 
-  const filteredSessions = sessions.filter(session => {
-    let matchesStart = true;
-    let matchesEnd = true;
-    let matchesStatus = true;
+  const sortedSessions = [...sessions]
+    .filter(session => {
+      let matchesStart = true;
+      let matchesEnd = true;
+      let matchesTimeStart = true;
+      let matchesTimeEnd = true;
+      let matchesStatus = true;
 
-    if (sessionStartDate) {
-      matchesStart = new Date(session.sessionDate) >= new Date(sessionStartDate);
-    }
-    if (sessionEndDate) {
-      matchesEnd = new Date(session.sessionDate) <= new Date(sessionEndDate);
-    }
-    if (sessionStatusFilter !== 'ALL') {
-      matchesStatus = session.status === sessionStatusFilter;
-    }
+      if (sessionStartDate) {
+        matchesStart = new Date(session.sessionDate) >= new Date(sessionStartDate);
+      }
+      if (sessionEndDate) {
+        matchesEnd = new Date(session.sessionDate) <= new Date(sessionEndDate);
+      }
+      if (sessionStartTime) {
+        matchesTimeStart = session.startTime >= sessionStartTime;
+      }
+      if (sessionEndTime) {
+        matchesTimeEnd = session.endTime <= sessionEndTime;
+      }
+      if (sessionStatusFilter !== 'ALL') {
+        matchesStatus = session.status === sessionStatusFilter;
+      }
 
-    return matchesStart && matchesEnd && matchesStatus;
-  });
+      return matchesStart && matchesEnd && matchesTimeStart && matchesTimeEnd && matchesStatus;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sessionSortField === 'date') {
+        comparison = new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime();
+      } else if (sessionSortField === 'capacity') {
+        comparison = a.maxCapacity - b.maxCapacity;
+      }
+      return sessionSortOrder === 'asc' ? comparison : -comparison;
+    });
 
   if (loading) return <div className="container py-20 text-center">Loading dashboard...</div>;
 
@@ -116,6 +273,32 @@ export function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="reservations">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 className="text-2xl serif">Reservations</h2>
+            
+            <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-xl shadow-sm border">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="res-start-date" className="text-xs text-slate-500">From</Label>
+                <Input 
+                  id="res-start-date" 
+                  type="date" 
+                  className="h-8 text-sm w-36"
+                  value={resStartDate}
+                  onChange={(e) => setResStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="res-end-date" className="text-xs text-slate-500">To</Label>
+                <Input 
+                  id="res-end-date" 
+                  type="date" 
+                  className="h-8 text-sm w-36"
+                  value={resEndDate}
+                  onChange={(e) => setResEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
           <Card className="border-none shadow-xl bg-white overflow-hidden">
             <Table>
               <TableHeader className="bg-slate-50">
@@ -161,7 +344,7 @@ export function AdminDashboard() {
         <TabsContent value="packages">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl serif">Buffet Packages</h2>
-            <Button className="bg-brand-olive rounded-full">
+            <Button className="bg-brand-olive rounded-full" onClick={() => setIsCreatePackageOpen(true)}>
               <Plus className="h-4 w-4 mr-2" /> New Package
             </Button>
           </div>
@@ -175,12 +358,17 @@ export function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {pkg.imageUrl && (
+                    <div className="w-full h-32 mb-4 rounded-md overflow-hidden bg-slate-100">
+                      <img src={pkg.imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <p className="text-sm text-slate-500 mb-4 line-clamp-2">{pkg.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-brand-olive">${pkg.pricePerPerson}/pp</span>
                     <div className="flex gap-2">
                       <Button size="icon" variant="ghost"><Edit className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" className="text-red-500" onClick={() => setDeletePackageId(pkg.id)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 </CardContent>
@@ -230,7 +418,7 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            <Button className="bg-brand-olive rounded-full">
+            <Button className="bg-brand-olive rounded-full" onClick={() => setIsCreateSessionOpen(true)}>
               <Plus className="h-4 w-4 mr-2" /> New Session
             </Button>
           </div>
@@ -238,30 +426,32 @@ export function AdminDashboard() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead>Date</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('date')}>
+                    <div className="flex items-center gap-1">Date <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
                   <TableHead>Time</TableHead>
-                  <TableHead>Capacity</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('capacity')}>
+                    <div className="flex items-center gap-1">Capacity <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSessions.map((session) => (
+                {sortedSessions.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell>{session.sessionDate}</TableCell>
                     <TableCell>{session.startTime} - {session.endTime}</TableCell>
                     <TableCell>{session.currentBooked} / {session.maxCapacity}</TableCell>
                     <TableCell>
-                      <Badge variant={session.status === 'OPEN' ? 'outline' : 'secondary'}>
-                        {session.status}
-                      </Badge>
+                      <SessionStatusBadge status={session.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost"><Edit className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setEditingSession(session)}><Edit className="h-4 w-4" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}
-                {filteredSessions.length === 0 && (
+                {sortedSessions.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-slate-500">
                       No sessions found matching your filters.
@@ -273,6 +463,228 @@ export function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Package Dialog */}
+      <Dialog open={!!deletePackageId} onOpenChange={(open) => !open && setDeletePackageId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Package</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this package? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6">
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button variant="destructive" onClick={confirmDeletePackage}>
+              Yes, Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Session Dialog */}
+      <Dialog open={isCreateSessionOpen} onOpenChange={setIsCreateSessionOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create New Session</DialogTitle>
+            <DialogDescription>
+              Schedule a new dining session for a buffet package.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Package</Label>
+              <Select value={newSession.packageId} onValueChange={(v) => setNewSession({...newSession, packageId: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a package" />
+                </SelectTrigger>
+                <SelectContent>
+                  {packages.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Input type="date" value={newSession.sessionDate} onChange={(e) => setNewSession({...newSession, sessionDate: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input type="time" value={newSession.startTime} onChange={(e) => setNewSession({...newSession, startTime: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>End Time</Label>
+                <Input type="time" value={newSession.endTime} onChange={(e) => setNewSession({...newSession, endTime: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Max Capacity</Label>
+                <Input type="number" min="1" value={newSession.maxCapacity} onChange={(e) => setNewSession({...newSession, maxCapacity: Number(e.target.value)})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Initial Status</Label>
+                <Select value={newSession.status} onValueChange={(v) => setNewSession({...newSession, status: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OPEN">Open</SelectItem>
+                    <SelectItem value="FULL">Full</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button className="bg-brand-olive hover:bg-brand-olive/90 text-white" onClick={handleCreateSession}>Create Session</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Session Dialog */}
+      <Dialog open={!!editingSession} onOpenChange={(open) => !open && setEditingSession(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Session</DialogTitle>
+            <DialogDescription>
+              Modify the details of this dining session.
+            </DialogDescription>
+          </DialogHeader>
+          {editingSession && (
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Package</Label>
+                <Select value={editingSession.packageId} onValueChange={(v) => setEditingSession({...editingSession, packageId: v})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a package" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {packages.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input type="date" value={editingSession.sessionDate} onChange={(e) => setEditingSession({...editingSession, sessionDate: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Input type="time" value={editingSession.startTime} onChange={(e) => setEditingSession({...editingSession, startTime: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Time</Label>
+                  <Input type="time" value={editingSession.endTime} onChange={(e) => setEditingSession({...editingSession, endTime: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Max Capacity</Label>
+                  <Input type="number" min="1" value={editingSession.maxCapacity} onChange={(e) => setEditingSession({...editingSession, maxCapacity: Number(e.target.value)})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={editingSession.status} onValueChange={(v) => setEditingSession({...editingSession, status: v as any})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="FULL">Full</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button className="bg-brand-olive hover:bg-brand-olive/90 text-white" onClick={handleUpdateSession}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Package Dialog */}
+      <Dialog open={isCreatePackageOpen} onOpenChange={setIsCreatePackageOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create New Package</DialogTitle>
+            <DialogDescription>
+              Add a new buffet package to your offerings.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Package Name</Label>
+              <Input value={newPackage.name} onChange={e => setNewPackage({...newPackage, name: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input value={newPackage.description} onChange={e => setNewPackage({...newPackage, description: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Price Per Person ($)</Label>
+                <Input type="number" min="1" value={newPackage.pricePerPerson} onChange={e => setNewPackage({...newPackage, pricePerPerson: Number(e.target.value)})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={newPackage.isActive ? 'active' : 'hidden'} onValueChange={v => setNewPackage({...newPackage, isActive: v === 'active'})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="hidden">Hidden</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Package Image</Label>
+              <Input type="file" accept="image/*" onChange={handleImageUpload} />
+              {newPackage.imageUrl && (
+                <div className="mt-2 w-full h-48 rounded-xl overflow-hidden border">
+                  <img src={newPackage.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button className="bg-brand-olive hover:bg-brand-olive/90 text-white" onClick={handleCreatePackage}>
+              Create Package
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function SessionStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case 'OPEN': 
+      return <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100" variant="outline">OPEN</Badge>;
+    case 'FULL': 
+      return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100" variant="outline">FULL</Badge>;
+    case 'CANCELLED': 
+      return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100" variant="outline">CANCELLED</Badge>;
+    default: 
+      return <Badge variant="secondary">{status}</Badge>;
+  }
 }

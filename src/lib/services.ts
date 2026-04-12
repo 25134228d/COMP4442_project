@@ -1,7 +1,7 @@
 import { BuffetPackage, DiningSession, Reservation } from '../types';
 
 // Mock Data
-const MOCK_PACKAGES: BuffetPackage[] = [
+const INITIAL_MOCK_PACKAGES: BuffetPackage[] = [
   {
     id: 'pkg-1',
     name: 'Ocean Bounty Seafood Night',
@@ -31,13 +31,20 @@ const MOCK_PACKAGES: BuffetPackage[] = [
   }
 ];
 
+const getMockPackages = (): BuffetPackage[] => {
+  const stored = localStorage.getItem('mockPackages');
+  if (stored) return JSON.parse(stored);
+  localStorage.setItem('mockPackages', JSON.stringify(INITIAL_MOCK_PACKAGES));
+  return INITIAL_MOCK_PACKAGES;
+};
+
 // Helper to initialize mock sessions
 const getMockSessions = (): DiningSession[] => {
   const stored = localStorage.getItem('mockSessions');
   if (stored) return JSON.parse(stored);
 
   const sessions: DiningSession[] = [];
-  MOCK_PACKAGES.forEach(pkg => {
+  INITIAL_MOCK_PACKAGES.forEach(pkg => {
     for (let i = 1; i <= 7; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
@@ -67,11 +74,36 @@ const getMockReservations = (): Reservation[] => {
 
 export const BuffetService = {
   async getActivePackages() {
-    return MOCK_PACKAGES.filter(p => p.isActive);
+    return getMockPackages().filter(p => p.isActive);
   },
 
   async getPackageById(id: string) {
-    return MOCK_PACKAGES.find(p => p.id === id);
+    return getMockPackages().find(p => p.id === id);
+  },
+
+  async createPackage(pkg: BuffetPackage) {
+    const packages = getMockPackages();
+    packages.unshift(pkg);
+    localStorage.setItem('mockPackages', JSON.stringify(packages));
+    return pkg;
+  },
+
+  async createSession(session: DiningSession) {
+    const sessions = getMockSessions();
+    sessions.unshift(session);
+    localStorage.setItem('mockSessions', JSON.stringify(sessions));
+    return session;
+  },
+
+  async updateSession(session: DiningSession) {
+    const sessions = getMockSessions();
+    const index = sessions.findIndex(s => s.id === session.id);
+    if (index !== -1) {
+      sessions[index] = session;
+      localStorage.setItem('mockSessions', JSON.stringify(sessions));
+      return true;
+    }
+    return false;
   },
 
   async getSessionsByPackage(packageId: string, date?: string) {
@@ -79,6 +111,10 @@ export const BuffetService = {
     return sessions.filter(s => 
       s.packageId === packageId && (!date || s.sessionDate === date)
     );
+  },
+
+  async getAllSessions() {
+    return getMockSessions();
   },
 
   async getMyReservations(userId: string) {
