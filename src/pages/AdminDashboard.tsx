@@ -24,6 +24,7 @@ export function AdminDashboard() {
   const [resSortOrder, setResSortOrder] = useState<'asc' | 'desc'>('desc');
   const [resStartDate, setResStartDate] = useState('');
   const [resEndDate, setResEndDate] = useState('');
+  const [resStatusFilter, setResStatusFilter] = useState('ALL');
 
   // Filtering and sorting state for sessions
   const [sessionStartDate, setSessionStartDate] = useState('');
@@ -32,7 +33,7 @@ export function AdminDashboard() {
   const [sessionEndTime, setSessionEndTime] = useState('');
   const [sessionStatusFilter, setSessionStatusFilter] = useState('ALL');
   const [sessionPackageFilter, setSessionPackageFilter] = useState('ALL');
-  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity' | 'package'>('date');
+  const [sessionSortField, setSessionSortField] = useState<'date' | 'capacity' | 'package' | 'time'>('date');
   const [sessionSortOrder, setSessionSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [deletePackageId, setDeletePackageId] = useState<string | null>(null);
@@ -237,7 +238,7 @@ export function AdminDashboard() {
     }
   };
 
-  const handleSessionSort = (field: 'date' | 'capacity' | 'package') => {
+  const handleSessionSort = (field: 'date' | 'capacity' | 'package' | 'time') => {
     if (sessionSortField === field) {
       setSessionSortOrder(sessionSortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -265,13 +266,19 @@ export function AdminDashboard() {
     .filter(res => {
       let matchesStart = true;
       let matchesEnd = true;
+      let matchesStatus = true;
+      
       if (resStartDate) {
         matchesStart = new Date(res.dateForSort) >= new Date(resStartDate);
       }
       if (resEndDate) {
         matchesEnd = new Date(res.dateForSort) <= new Date(resEndDate);
       }
-      return matchesStart && matchesEnd;
+      if (resStatusFilter !== 'ALL') {
+        matchesStatus = res.status === resStatusFilter;
+      }
+      
+      return matchesStart && matchesEnd && matchesStatus;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -325,6 +332,8 @@ export function AdminDashboard() {
         const pkgA = packages.find(p => p.id === a.packageId)?.name || '';
         const pkgB = packages.find(p => p.id === b.packageId)?.name || '';
         comparison = pkgA.localeCompare(pkgB);
+      } else if (sessionSortField === 'time') {
+        comparison = a.startTime.localeCompare(b.startTime);
       }
       return sessionSortOrder === 'asc' ? comparison : -comparison;
     });
@@ -366,6 +375,20 @@ export function AdminDashboard() {
                   value={resEndDate}
                   onChange={(e) => setResEndDate(e.target.value)}
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-slate-500">Status</Label>
+                <Select value={resStatusFilter} onValueChange={setResStatusFilter}>
+                  <SelectTrigger className="h-8 w-32 text-sm">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -524,7 +547,9 @@ export function AdminDashboard() {
                   <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('date')}>
                     <div className="flex items-center gap-1">Date <ArrowUpDown className="h-3 w-3" /></div>
                   </TableHead>
-                  <TableHead>Time</TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('time')}>
+                    <div className="flex items-center gap-1">Time <ArrowUpDown className="h-3 w-3" /></div>
+                  </TableHead>
                   <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSessionSort('capacity')}>
                     <div className="flex items-center gap-1">Capacity <ArrowUpDown className="h-3 w-3" /></div>
                   </TableHead>
