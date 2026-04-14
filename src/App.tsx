@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 // Real Pages
 import { HomePage } from './pages/HomePage';
 import { AuthPage } from './pages/AuthPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { PackagesPage } from './pages/PackagesPage';
 import { BookingPage } from './pages/BookingPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
@@ -39,6 +40,7 @@ export default function App() {
                 <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
                 <Route path="/about" element={<PageWrapper><AboutPage /></PageWrapper>} />
                 <Route path="/auth" element={<PageWrapper><AuthPage /></PageWrapper>} />
+                <Route path="/auth/callback" element={<PageWrapper><AuthCallbackPage /></PageWrapper>} />
                 <Route path="/packages" element={<PageWrapper><PackagesPage /></PageWrapper>} />
                 <Route 
                   path="/book/:packageId" 

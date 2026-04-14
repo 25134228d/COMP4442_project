@@ -2,51 +2,69 @@
 
 **COMP4442 Semester Project**
 
-This is a frontend project for a cloud-based buffet reservation system developed using React.js. The system provides customers with online booking, availability checking, and reservation management, while also featuring an admin dashboard for managing schedules and orders.
+This repository now contains:
+- **Frontend**: React + Vite (in project root)
+- **Backend**: Spring Boot + Google OAuth2 + JWT + MySQL (in `/backend`)
 
-## Key Features
+## 1) Frontend Setup
 
-*   **Customer Portal:**
-    *   Browse buffet packages.
-    *   Book reservations by selecting date, number of guests, and session.
-    *   View personal booking history.
-    *   Cancel reservations.
-*   **Admin Dashboard:**
-    *   View all reservation records and statuses.
-    *   Confirm or manage customer bookings.
-    *   Manage buffet packages and dining sessions.
-
-## Tech Stack
-
-*   **Frontend Framework:** React.js (Vite)
-*   **Routing:** React Router v6
-*   **UI Components:** Tailwind CSS, shadcn/ui, Lucide Icons
-*   **Animations:** Framer Motion
-*   **State & Data:** React Context API, LocalStorage (Mock Backend)
-
-## Getting Started
-
-If you are opening this project for the first time, follow these steps to run it locally:
-
-### 1. Install Node.js
-Ensure you have [Node.js](https://nodejs.org/) installed (version 18 or higher recommended).
-
-### 2. Install Dependencies
-Open a terminal in the project root directory and run the following command to install the necessary packages:
 ```bash
 npm install
-```
-
-### 3. Start Development Server
-After installation is complete, run the following command to start the project:
-```bash
 npm run dev
 ```
-Once the server starts, open your browser and go to `http://localhost:3000` to preview the website.
 
-## Mock Accounts
+Frontend env (create `.env` from `.env.example`):
+- `VITE_API_BASE_URL` (default `http://localhost:8080`)
 
-This project currently uses LocalStorage to simulate the backend and authentication state. You can use the following test accounts on the sign-in page:
+## 2) Backend Setup
 
-*   **Admin Account:** `admin@test.com`
-*   **Customer Account:** `user@test.com` (or any other email address)
+### Start MySQL
+```bash
+docker compose up -d
+```
+
+### Run backend
+```bash
+cd backend
+cp .env.example .env
+# export vars from .env (or configure in IDE)
+mvn spring-boot:run
+```
+
+Backend defaults to `http://localhost:8080`.
+
+## 3) Google OAuth2 Configuration
+
+In Google Cloud Console:
+- Create OAuth2 Web Application credentials.
+- Authorized redirect URI:
+  - `http://localhost:8080/login/oauth2/code/google`
+
+Set backend environment variables:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `FRONTEND_BASE_URL` (e.g., `http://localhost:3000`)
+- `CORS_ALLOWED_ORIGINS` (e.g., `http://localhost:3000`)
+- `ADMIN_EMAILS` (comma-separated admin emails)
+
+## 4) Authentication Flow
+
+1. User clicks **Sign In with Google** on frontend.
+2. Frontend redirects to Spring Boot OAuth2 endpoint.
+3. Spring Boot handles Google callback, upserts user in MySQL, issues JWT.
+4. Backend redirects to frontend callback with `?token=`.
+5. Frontend stores token and loads profile from `/api/auth/me`.
+
+## 5) AWS EC2 Deployment Notes
+
+Recommended setup:
+- EC2 for Spring Boot service
+- RDS MySQL for database
+- Nginx reverse proxy + HTTPS
+
+High-level steps:
+1. Build backend jar (`mvn clean package`).
+2. Upload jar to EC2 and run as `systemd` service.
+3. Configure env vars on EC2 (`JWT_SECRET`, DB, Google OAuth).
+4. Point Google OAuth redirect URI to production backend domain.
+5. Open only required ports and restrict DB access.

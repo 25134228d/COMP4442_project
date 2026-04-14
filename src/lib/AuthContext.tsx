@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile } from '../types';
+import { api, API_URL } from './api';
 
-// Mock User type to replace Firebase User
 export interface MockUser {
   uid: string;
   email: string | null;
@@ -13,8 +13,9 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (email: string) => void;
+  login: () => void;
   logout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   login: () => {},
   logout: () => {},
+  refreshProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -33,45 +35,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check localStorage for existing session
-    const storedUser = localStorage.getItem('mockUser');
-    const storedProfile = localStorage.getItem('mockProfile');
-    
-    if (storedUser && storedProfile) {
-      setUser(JSON.parse(storedUser));
-      setProfile(JSON.parse(storedProfile));
+  const refreshProfile = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setUser(null);
+      setProfile(null);
+      return;
     }
-    setLoading(false);
+
+    const { data } = await api.get('/api/auth/me');
+    const loadedProfile: UserProfile = {
+      uid: data.uid,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      createdAt: data.createdAt,
+    };
+
+    const loadedUser: MockUser = {
+      uid: data.uid,
+      email: data.email,
+      displayName: data.name,
+    };
+
+    setProfile(loadedProfile);
+    setUser(loadedUser);
+    localStorage.setItem('mockProfile', JSON.stringify(loadedProfile));
+    localStorage.setItem('mockUser', JSON.stringify(loadedUser));
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await refreshProfile();
+      } catch {
+        localStorage.removeItem('authToken');
+        setUser(null);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void init();
   }, []);
 
-  const login = (email: string) => {
-    const isHardcodedAdmin = email === 'admin@test.com' || email === 'tony107107107@gmail.com';
-    
-    const mockUser: MockUser = {
-      uid: isHardcodedAdmin ? 'admin-uid-123' : 'user-uid-456',
-      email: email,
-      displayName: isHardcodedAdmin ? 'Admin User' : 'Customer User',
-    };
-    
-    const mockProfile: UserProfile = {
-      uid: mockUser.uid,
-      name: mockUser.displayName || 'Guest',
-      email: mockUser.email || '',
-      role: isHardcodedAdmin ? 'ADMIN' : 'CUSTOMER',
-      createdAt: new Date().toISOString(),
-    };
-
-    setUser(mockUser);
-    setProfile(mockProfile);
-    
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
-    localStorage.setItem('mockProfile', JSON.stringify(mockProfile));
+  const login = () => {
+    window.location.href = `${API_URL}/oauth2/authorization/google`;
   };
 
   const logout = () => {
     setUser(null);
     setProfile(null);
+    localStorage.removeItem('authToken');
     localStorage.removeItem('mockUser');
     localStorage.removeItem('mockProfile');
   };
@@ -79,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = profile?.role === 'ADMIN';
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, login, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

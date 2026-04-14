@@ -3,35 +3,14 @@ import { useAuth } from '../lib/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Utensils } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 
 export function AuthPage() {
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error('Please enter an email address');
-      return;
-    }
-    
+  const handleLogin = () => {
     setLoading(true);
-    try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      login(email);
-      toast.success('Welcome to BuffetEase!');
-      navigate('/');
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to sign in. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    login();
   };
 
   return (
@@ -44,35 +23,19 @@ export function AuthPage() {
           <div className="space-y-2">
             <CardTitle className="text-3xl serif">Welcome Back</CardTitle>
             <CardDescription className="text-slate-500">
-              Sign in to manage your reservations and explore our exquisite buffet packages.
+              Sign in with Google to manage your reservations and explore our buffet packages.
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-slate-700">Email Address</label>
-              <input 
-                id="email"
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@test.com or user@test.com"
-                className="w-full h-12 px-4 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-olive"
-              />
-            </div>
-            <Button 
-              type="submit"
-              className="w-full h-12 text-base font-medium bg-brand-olive hover:bg-brand-olive/90 text-white transition-all"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign In (Mock)'}
-            </Button>
-          </form>
-          <div className="text-sm text-center text-slate-500 mt-4">
-            <p><strong>Admin:</strong> admin@test.com</p>
-            <p><strong>Customer:</strong> user@test.com</p>
-          </div>
+          <Button
+            type="button"
+            className="w-full h-12 text-base font-medium bg-brand-olive hover:bg-brand-olive/90 text-white transition-all"
+            disabled={loading}
+            onClick={handleLogin}
+          >
+            {loading ? 'Redirecting...' : 'Sign In with Google'}
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 text-center">
           <p className="text-xs text-slate-400">
