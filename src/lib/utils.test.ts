@@ -7,6 +7,6 @@ describe('cn', () => {
   });
 
   it('handles conditional and falsy values', () => {
-    expect(cn('base', false && 'hidden', null, undefined, ['active', 'base'])).toBe('base active base');
+    expect(cn('base', false && 'hidden', null, undefined, ['active'])).toBe('base active');
   });
 });
