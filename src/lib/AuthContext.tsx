@@ -68,7 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const init = async () => {
       try {
         await refreshProfile();
-      } catch {
+      } catch (error) {
+        console.error(error);
         localStorage.removeItem('authToken');
         setUser(null);
         setProfile(null);

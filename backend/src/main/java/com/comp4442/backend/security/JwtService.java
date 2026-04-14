@@ -24,7 +24,10 @@ public class JwtService {
         } catch (Exception ignored) {
             bytes = secret.getBytes(StandardCharsets.UTF_8);
         }
-        this.key = Keys.hmacShaKeyFor(pad(bytes));
+        if (bytes.length < 32) {
+            throw new IllegalArgumentException("JWT secret must be at least 32 bytes (256 bits)");
+        }
+        this.key = Keys.hmacShaKeyFor(bytes);
         this.expirationSeconds = expirationSeconds;
     }
 
@@ -43,11 +46,4 @@ public class JwtService {
         return Jwts.parser().verifyWith((javax.crypto.SecretKey) key).build().parseSignedClaims(token).getPayload();
     }
 
-    private byte[] pad(byte[] input) {
-        if (input.length >= 32) return input;
-        byte[] out = new byte[32];
-        System.arraycopy(input, 0, out, 0, input.length);
-        for (int i = input.length; i < out.length; i++) out[i] = 'x';
-        return out;
-    }
 }

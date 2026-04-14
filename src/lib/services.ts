@@ -77,12 +77,15 @@ export const BuffetService = {
       return true;
     }
 
-    try {
-      await api.patch(`/api/reservations/${id}/status`, { status });
-      return true;
-    } catch {
+    const storedProfile = localStorage.getItem('mockProfile');
+    const role = storedProfile ? JSON.parse(storedProfile).role : undefined;
+
+    if (role === 'ADMIN') {
       await api.patch(`/api/admin/reservations/${id}/status`, { status });
       return true;
     }
+
+    await api.patch(`/api/reservations/${id}/status`, { status });
+    return true;
   }
 };
