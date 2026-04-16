@@ -98,7 +98,7 @@ The Vite proxy forwards `/api` requests to `http://localhost:8080`.
 If you want Spring Boot to serve the built frontend:
 
 ```bash
-npm run build:for-spring
+npm run build
 cd springboot-server
 mvn spring-boot:run
 ```
