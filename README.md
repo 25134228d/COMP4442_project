@@ -1,52 +1,154 @@
-# Cloud Buffet Booking System (BuffetEase)
+# BuffetEase - Cloud Buffet Booking System
 
-**COMP4442 Semester Project**
+Semester project for a cloud-based buffet reservation platform.
 
-This is a frontend project for a cloud-based buffet reservation system developed using React.js. The system provides customers with online booking, availability checking, and reservation management, while also featuring an admin dashboard for managing schedules and orders.
+BuffetEase includes:
+- A React (Vite) frontend for customers and admins
+- A Spring Boot backend that serves APIs
+- JPA-based persistence layer (currently configured to run with H2 for local development)
 
-## Key Features
+## Features
 
-*   **Customer Portal:**
-    *   Browse buffet packages.
-    *   Book reservations by selecting date, number of guests, and session.
-    *   View personal booking history.
-    *   Cancel reservations.
-*   **Admin Dashboard:**
-    *   View all reservation records and statuses.
-    *   Confirm or manage customer bookings.
-    *   Manage buffet packages and dining sessions.
+### Customer Portal
+- Browse buffet packages
+- Book reservations by date, session, and guest count
+- View personal booking history
+- Cancel reservations
+
+### Admin Dashboard
+- View all reservations and statuses
+- Confirm/manage customer bookings
+- Manage buffet packages and dining sessions
 
 ## Tech Stack
 
-*   **Frontend Framework:** React.js (Vite)
-*   **Routing:** React Router v6
-*   **UI Components:** Tailwind CSS, shadcn/ui, Lucide Icons
-*   **Animations:** Framer Motion
-*   **State & Data:** React Context API, LocalStorage (Mock Backend)
+### Frontend
+- React + Vite
+- React Router
+- Tailwind CSS + shadcn/ui + Lucide Icons
+- Framer Motion
+- Axios for API calls
 
-## Getting Started
+### Backend
+- Spring Boot 3
+- Spring Web
+- Spring Data JPA
+- Maven
+- H2 (default local profile)
+- MySQL-ready configuration via environment variables
 
-If you are opening this project for the first time, follow these steps to run it locally:
+---
 
-### 1. Install Node.js
-Ensure you have [Node.js](https://nodejs.org/) installed (version 18 or higher recommended).
+## Project Structure
 
-### 2. Install Dependencies
-Open a terminal in the project root directory and run the following command to install the necessary packages:
+- Frontend root: current folder
+- Backend: [springboot-server](springboot-server)
+
+---
+
+## Prerequisites
+
+Install the following tools before running locally:
+
+1. Node.js 18+
+2. Java 17+
+3. Maven 3.9+
+
+---
+
+## Setup Steps (Recommended)
+
+### 1) Install frontend dependencies
+
+From project root:
+
 ```bash
 npm install
 ```
 
-### 3. Start Development Server
-After installation is complete, run the following command to start the project:
+### 2) Run backend (Spring Boot)
+
+Important: run this command inside [springboot-server](springboot-server), not project root.
+
+```bash
+cd springboot-server
+mvn spring-boot:run
+```
+
+Backend URL:
+- http://localhost:8080
+
+### 3) Run frontend (Vite dev server)
+
+Open a second terminal from project root:
+
 ```bash
 npm run dev
 ```
-Once the server starts, open your browser and go to `http://localhost:3000` to preview the website.
 
-## Mock Accounts
+Frontend URL:
+- http://localhost:3000
 
-This project currently uses LocalStorage to simulate the backend and authentication state. You can use the following test accounts on the sign-in page:
+The Vite proxy forwards `/api` requests to `http://localhost:8080`.
 
-*   **Admin Account:** `admin@test.com`
-*   **Customer Account:** `user@test.com` (or any other email address)
+---
+
+## Alternative: Serve frontend from Spring Boot
+
+If you want Spring Boot to serve the built frontend:
+
+```bash
+npm run build:for-spring
+cd springboot-server
+mvn spring-boot:run
+```
+
+Then access:
+- http://localhost:8080
+
+---
+
+## Local Development Accounts
+
+Use these emails on the sign-in page:
+
+- Admin: `admin@test.com`
+- Customer: `user@test.com` (or any other email)
+
+---
+
+## Troubleshooting
+
+### Error: `No plugin found for prefix 'spring-boot'`
+
+Cause: You ran Maven from the wrong folder.
+
+Fix:
+
+```bash
+cd springboot-server
+mvn spring-boot:run
+```
+
+### Error: `Port 8080 was already in use`
+
+Cause: Another process is already using port `8080`.
+
+Fix by stopping the old process, or run with another port:
+
+```bash
+cd springboot-server
+mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
+```
+
+---
+
+## Backend Database Notes
+
+- Current local setup uses H2 in-memory DB for easy startup.
+- MySQL connection settings are prepared in backend config and can be supplied via environment variables:
+    - `MYSQL_URL`
+    - `MYSQL_USER`
+    - `MYSQL_PASSWORD`
+
+```
