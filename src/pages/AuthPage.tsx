@@ -18,12 +18,10 @@ export function AuthPage() {
       toast.error('Please enter an email address');
       return;
     }
-    
+
     setLoading(true);
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      login(email);
+      await login(email);
       toast.success('Welcome to BuffetEase!');
       navigate('/');
     } catch (error) {
@@ -52,21 +50,21 @@ export function AuthPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-slate-700">Email Address</label>
-              <input 
+              <input
                 id="email"
-                type="email" 
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@test.com or user@test.com"
                 className="w-full h-12 px-4 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-olive"
               />
             </div>
-            <Button 
+            <Button
               type="submit"
               className="w-full h-12 text-base font-medium bg-brand-olive hover:bg-brand-olive/90 text-white transition-all"
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In (Mock)'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
           <div className="text-sm text-center text-slate-500 mt-4">

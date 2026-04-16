@@ -1,19 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import axios from 'axios';
 import { UserProfile } from '../types';
 
-// Mock User type to replace Firebase User
-export interface MockUser {
+export interface ApiUser {
   uid: string;
   email: string | null;
   displayName: string | null;
 }
 
+interface LoginResponse {
+  user: ApiUser;
+  profile: UserProfile;
+}
+
 interface AuthContextType {
-  user: MockUser | null;
+  user: ApiUser | null;
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (email: string) => void;
+  login: (email: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -22,58 +27,37 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   isAdmin: false,
-  login: () => {},
-  logout: () => {},
+  login: async () => { },
+  logout: () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check localStorage for existing session
-    const storedUser = localStorage.getItem('mockUser');
-    const storedProfile = localStorage.getItem('mockProfile');
-    
-    if (storedUser && storedProfile) {
-      setUser(JSON.parse(storedUser));
-      setProfile(JSON.parse(storedProfile));
-    }
     setLoading(false);
   }, []);
 
-  const login = (email: string) => {
-    const isHardcodedAdmin = email === 'admin@test.com' || email === 'tony107107107@gmail.com';
-    
-    const mockUser: MockUser = {
-      uid: isHardcodedAdmin ? 'admin-uid-123' : 'user-uid-456',
-      email: email,
-      displayName: isHardcodedAdmin ? 'Admin User' : 'Customer User',
-    };
-    
-    const mockProfile: UserProfile = {
-      uid: mockUser.uid,
-      name: mockUser.displayName || 'Guest',
-      email: mockUser.email || '',
-      role: isHardcodedAdmin ? 'ADMIN' : 'CUSTOMER',
-      createdAt: new Date().toISOString(),
-    };
+  const login = async (email: string) => {
+    try {
+      const response = await axios.post<LoginResponse>('/api/auth/login', { email });
+      const { user, profile } = response.data;
 
-    setUser(mockUser);
-    setProfile(mockProfile);
-    
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
-    localStorage.setItem('mockProfile', JSON.stringify(mockProfile));
+      setUser(user);
+      setProfile(profile);
+    } catch (error) {
+      console.error('Login failed', error);
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
     setProfile(null);
-    localStorage.removeItem('mockUser');
-    localStorage.removeItem('mockProfile');
   };
 
   const isAdmin = profile?.role === 'ADMIN';
