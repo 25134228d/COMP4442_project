@@ -107,8 +107,7 @@ export function AdminDashboard() {
       toast.error('End time must be after start time');
       return;
     }
-    const session: DiningSession = {
-      id: `session-${Date.now()}`,
+    const session: Omit<DiningSession, 'id'> = {
       packageId: newSession.packageId,
       sessionDate: newSession.sessionDate,
       startTime: newSession.startTime,
@@ -151,8 +150,7 @@ export function AdminDashboard() {
       toast.error('Please fill in all required fields correctly');
       return;
     }
-    const pkg: BuffetPackage = {
-      id: `pkg-${Date.now()}`,
+    const pkg: Omit<BuffetPackage, 'id'> = {
       name: newPackage.name,
       description: newPackage.description,
       pricePerPerson: Number(newPackage.pricePerPerson),
@@ -427,12 +425,7 @@ export function AdminDashboard() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl serif">Buffet Packages</h2>
             <div className="flex gap-2">
-              <Button variant="outline" className="text-red-500 border-red-200 hover:bg-red-50" onClick={() => {
-                localStorage.clear();
-                window.location.reload();
-              }}>
-                Reset All Data
-              </Button>
+
               <Button className="bg-brand-olive rounded-full" onClick={() => setIsCreatePackageOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" /> New Package
               </Button>
