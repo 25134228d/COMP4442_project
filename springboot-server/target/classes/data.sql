@@ -5,3 +5,7 @@ WHERE NOT EXISTS (SELECT 1 FROM buffet_packages WHERE id = 'pkg-seed-1');
 INSERT INTO buffet_packages (id, name, description, price_per_person, type, image_url, is_active)
 SELECT 'pkg-seed-2', 'Artisanal Sunday Brunch', 'Handcrafted pastries, organic eggs, and bottomless mimosas.', 45, 'BRUNCH', 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&q=80&w=1000', true
 WHERE NOT EXISTS (SELECT 1 FROM buffet_packages WHERE id = 'pkg-seed-2');
+
+INSERT INTO buffet_packages (id, name, description, price_per_person, type, image_url, is_active)
+SELECT 'pkg-seed-3', 'Garden Harvest Lunch Buffet', 'A stylish midday buffet with chef-crafted salads, live carving, seasonal hot dishes, and elegant desserts.', 58, 'LUNCH', 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=1000', true
+WHERE NOT EXISTS (SELECT 1 FROM buffet_packages WHERE id = 'pkg-seed-3');
