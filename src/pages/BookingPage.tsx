@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { Users, Calendar as CalendarIcon, Clock } from 'lucide-react';
 
 const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+const HK_PHONE_PREFIX = '852-';
 
 const minutesToTime = (minutes: number) => {
   const h = Math.floor(minutes / 60).toString().padStart(2, '0');
@@ -71,7 +72,7 @@ export function BookingPage() {
 
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
+  const [contactPhone, setContactPhone] = useState(HK_PHONE_PREFIX);
   const [guestCount, setGuestCount] = useState(2);
   const [specialRequest, setSpecialRequest] = useState('');
 
@@ -138,11 +139,78 @@ export function BookingPage() {
     ? selectedSession.maxCapacity - selectedSession.currentBooked
     : 0;
 
+  // Regular Expression for name: only allow English letters and spaces
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (!/^[a-zA-Z\s]*$/.test(value)) {
+      toast.error('Full Name can only contain English letters and spaces. Example: Chan Tai Man');
+      return;
+    }
+    setContactName(value);
+  };
+
+  // Regular Expression for email: only allow valid email characters (letters, numbers, @, ., _, -)
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (!/^[a-zA-Z0-9@._%+-]*$/.test(value)) {
+      toast.error('Email can only contain letters, numbers, and @ . _ % + -');
+      return;
+    }
+    setContactEmail(value);
+  };
+
+  const handleEmailBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim();
+    if (!value) return;
+    if (!value.includes('@')) {
+      toast.error('Email must include "@". Example: you@example.com');
+    }
+  };
+
+  // Phone number must stay as 852- + exactly 8 digits (Hong Kong format)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    if (!value.startsWith(HK_PHONE_PREFIX)) {
+      toast.error('Phone number must start with 852- and cannot remove the prefix.');
+      setContactPhone(HK_PHONE_PREFIX);
+      return;
+    }
+
+    const digitsPart = value.slice(HK_PHONE_PREFIX.length);
+    if (!/^\d*$/.test(digitsPart)) {
+      toast.error('Phone number can only contain 8 digits after 852-.');
+      return;
+    }
+
+    if (digitsPart.length > 8) {
+      toast.error('Phone number can only contain 8 digits after 852-.');
+      return;
+    }
+
+    setContactPhone(value);
+  };
+
   const handleBooking = async () => {
     if (!selectedSession || !pkg) return;
 
     if (!contactName.trim() || !contactEmail.trim() || !contactPhone.trim()) {
       toast.error('Please fill in your personal details.');
+      return;
+    }
+
+    if (!/^[a-zA-Z\s]+$/.test(contactName.trim())) {
+      toast.error('Name can only contain English letters and spaces.');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(contactEmail.trim())) {
+      toast.error('Please enter a valid email address with "@".');
+      return;
+    }
+
+    if (!/^852-\d{8}$/.test(contactPhone.trim())) {
+      toast.error('Phone number must be a Hong Kong number: 852- followed by 8 digits.');
       return;
     }
 
@@ -185,16 +253,16 @@ export function BookingPage() {
   if (!pkg) return <div className="container py-20 text-center">Package not found.</div>;
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-5xl">
+    <div className="container mx-auto px-4 py-16 max-w-6xl">
       <div className="mb-8 rounded-3xl bg-gradient-to-r from-brand-olive/10 to-brand-cream p-8 border shadow-sm">
-        <h1 className="text-4xl serif mb-2">Reserve Your Table</h1>
+        <h1 className="text-5xl p-10 serif mb-2">Reserve Your Table</h1>
         <p className="text-slate-600 font-medium">{pkg.name} • ${pkg.pricePerPerson} per person</p>
       </div>
 
       <Card className="border-none shadow-xl bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 serif text-2xl">
-            <CalendarIcon className="h-6 w-6 text-brand-olive" /> Select a Timeslot
+            <CalendarIcon className="h-7 w-6 text-3xl text-brand-olive" /> Select a Timeslot
           </CardTitle>
           <p className="text-slate-500 mt-1">Pick your preferred session. A quick booking form will expand below.</p>
         </CardHeader>
@@ -204,7 +272,7 @@ export function BookingPage() {
             <div className="space-y-6">
               {sortedDates.map((date) => (
                 <div key={date}>
-                  <h3 className="text-lg font-bold serif mb-3 text-slate-800">
+                  <h3 className="text-xl font-bold serif mb-3 text-slate-800">
                     {format(new Date(date), 'EEEE, MMMM do, yyyy')}
                   </h3>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -217,7 +285,7 @@ export function BookingPage() {
                             setSelectedSession(session);
                             setGuestCount((prev) => Math.min(Math.max(prev, 1), seatsLeft || 1));
                           }}
-                          className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${selectedSession?.id === session.id
+                          className={`p-6 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${selectedSession?.id === session.id
                             ? 'border-brand-olive bg-brand-olive/5 ring-1 ring-brand-olive'
                             : 'border-slate-100 hover:border-slate-300 bg-white'
                             }`}
@@ -257,7 +325,7 @@ export function BookingPage() {
               >
                 <Card className="border-brand-olive/30 bg-brand-olive/[0.03] shadow-md">
                   <CardHeader>
-                    <CardTitle className="text-xl serif">Your Details</CardTitle>
+                    <CardTitle className="text-2xl serif">Your Details</CardTitle>
                     <p className="text-sm text-slate-500">
                       {format(new Date(selectedSession.sessionDate), 'PPP')} • {selectedSession.startTime} - {selectedSession.endTime}
                     </p>
@@ -268,10 +336,10 @@ export function BookingPage() {
                         <Label htmlFor="contact-name">Full Name</Label>
                         <Input
                           id="contact-name"
-                          className="h-11"
+                          className="h-14 text-lg"
                           value={contactName}
-                          onChange={(e) => setContactName(e.target.value)}
-                          placeholder="e.g. Chan Tai Man"
+                          onChange={handleNameChange}
+                          placeholder="e.g. Chan Tai Man (English letters only)"
                         />
                       </div>
                       <div className="space-y-2">
@@ -279,20 +347,23 @@ export function BookingPage() {
                         <Input
                           id="contact-email"
                           type="email"
-                          className="h-11"
+                          className="h-14 text-lg"
                           value={contactEmail}
-                          onChange={(e) => setContactEmail(e.target.value)}
-                          placeholder="you@example.com"
+                          onChange={handleEmailChange}
+                          onBlur={handleEmailBlur}
+                          placeholder="e.g. alex.chan@example.com"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contact-phone">Phone Number</Label>
+                        <Label htmlFor="contact-phone">Phone Number (Hong Kong Number)</Label>
                         <Input
                           id="contact-phone"
-                          className="h-11"
+                          className="h-14 text-lg"
                           value={contactPhone}
-                          onChange={(e) => setContactPhone(e.target.value)}
-                          placeholder="e.g. +852 9123 4567"
+                          onChange={handlePhoneChange}
+                          placeholder="e.g. 852-91234567"
+                          maxLength={12}
+                          inputMode="numeric"
                         />
                       </div>
                       <div className="space-y-2">
@@ -304,7 +375,7 @@ export function BookingPage() {
                           type="number"
                           min={1}
                           max={remainingSeats}
-                          className="h-11"
+                          className="h-14 text-lg"
                           value={guestCount}
                           onChange={(e) => setGuestCount(Number(e.target.value))}
                         />
@@ -316,7 +387,7 @@ export function BookingPage() {
                       <Label htmlFor="special-request">Special Requests (Optional)</Label>
                       <Input
                         id="special-request"
-                        className="h-11"
+                        className="h-14 text-lg"
                         value={specialRequest}
                         onChange={(e) => setSpecialRequest(e.target.value)}
                         placeholder="Dietary requirements, allergies, birthday setup..."
@@ -325,11 +396,11 @@ export function BookingPage() {
 
                     <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Estimated Total</p>
+                        <p className="ttext-4xl font-bold text-slate-400 uppercase tracking-widest">Estimated Total</p>
                         <p className="text-3xl font-bold text-brand-olive">${pkg.pricePerPerson * guestCount}</p>
                       </div>
                       <Button
-                        className="bg-brand-olive h-11 rounded-full px-8"
+                        className="bg-brand-olive h-14 text-lg rounded-full px-10"
                         onClick={handleBooking}
                         disabled={submitting}
                       >

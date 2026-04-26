@@ -32,7 +32,7 @@ public class AuthService {
         boolean isAdmin = "admin@test.com".equalsIgnoreCase(email) || "tony107107107@gmail.com".equalsIgnoreCase(email);
 
         user.setEmail(email);
-        user.setName(isAdmin ? "Admin User" : "Customer User");
+        user.setName(isAdmin ? "Admin User" : "Guest User");
         user.setRole(isAdmin ? UserRole.ADMIN : UserRole.CUSTOMER);
 
         return userProfileRepository.save(user);

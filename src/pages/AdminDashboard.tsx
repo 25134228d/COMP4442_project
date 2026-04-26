@@ -75,7 +75,7 @@ export function AdminDashboard() {
         const session = allSessions.find(s => s.id === d.sessionId);
         return {
           ...d,
-          userName: d.userId === 'admin-uid-123' ? 'Admin User' : 'Customer User', // Mock user name
+          userName: d.userId === 'admin-uid-123' ? 'Admin User' : 'Guest User', // Mock user name
           sessionInfo: session ? `${session.sessionDate} ${session.startTime}` : 'N/A',
           dateForSort: session ? session.sessionDate : d.createdAt
         };

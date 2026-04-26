@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { BuffetPackage, DiningSession, Reservation } from '../types';
 
-// 設定基礎 API 路徑 (對應到你的 Spring Boot Controller)
+// Setting the base URL for API calls (should match your Spring Boot Controller's mapping)
 const API_BASE_URL = '/api';
 const GUEST_RESERVATION_KEY = 'buffetease-guest-reservation-id';
 
@@ -25,13 +25,11 @@ export const GuestReservationSession = {
 };
 
 export const BuffetService = {
-  // ============================
-  // Package (方案) 相關 API
-  // ============================
+
+  // Package related API
 
   async getActivePackages(): Promise<BuffetPackage[]> {
-    // 假設後端有提供 /api/packages/active 的接口
-    // 或者可以從前端過濾： const res = await this.getAllPackages(); return res.filter(p => p.isActive);
+    // As backend should ideally handle this filtering to reduce data transfer and improve performance.
     const response = await axios.get(`${API_BASE_URL}/packages/active`);
     return response.data;
   },
@@ -70,17 +68,14 @@ export const BuffetService = {
     }
   },
 
-  // ============================
-  // Session (場次) 相關 API
-  // ============================
-
+  // Session related API
   async getAllSessions(): Promise<DiningSession[]> {
     const response = await axios.get(`${API_BASE_URL}/sessions`);
     return response.data;
   },
 
   async getSessionsByPackage(packageId: string, date?: string): Promise<DiningSession[]> {
-    // 透過 Query Parameter 傳遞過濾條件
+    // Filtering data through query parameters
     const params = new URLSearchParams();
     if (date) params.append('date', date);
 
@@ -102,10 +97,7 @@ export const BuffetService = {
     }
   },
 
-  // ============================
-  // Reservation (預訂) 相關 API
-  // ============================
-
+  // Reservation related API
   async getAllReservations(): Promise<Reservation[]> {
     const response = await axios.get(`${API_BASE_URL}/reservations`);
     return response.data;

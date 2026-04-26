@@ -1,4 +1,3 @@
-// PackagesPage.tsx
 import React, { useEffect, useState } from 'react';
 import { BuffetService } from '../lib/services';
 import { BuffetPackage } from '../types';
@@ -17,12 +16,12 @@ export function PackagesPage() {
     const fetchPackages = async () => {
       let data = await BuffetService.getActivePackages();
 
-      // 如果後端還沒有資料，先給一個漂亮的 Lunch package 示範（不會影響正式上線）
+      // A nice fallback package for demo purposes
       if (!data || data.length === 0) {
         data = [{
           id: 'lunch-demo-001',
           name: 'Elegant Lunch Buffet',
-          description: '精選午間自助餐，包含新鮮沙拉、海鮮、熱炒及精緻甜點，適合商務聚餐或家庭午宴。',
+          description: 'Chosen lunch buffet includes fresh salads, seafood, stir-fries, and exquisite desserts, making it suitable for business gatherings or family lunches.',
           pricePerPerson: 388,
           isActive: true,
           imageUrl: 'https://picsum.photos/seed/lunch-buffet/800/600',
