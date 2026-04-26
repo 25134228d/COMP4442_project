@@ -179,4 +179,3 @@ mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
     - `MYSQL_USER`
     - `MYSQL_PASSWORD`
 
-```
