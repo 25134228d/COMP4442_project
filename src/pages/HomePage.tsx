@@ -3,19 +3,16 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { motion } from 'motion/react';
 import { ArrowRight, Star, Clock, Users } from 'lucide-react';
-import { useAuth } from '../lib/AuthContext';
 
 export function HomePage() {
-  const { user } = useAuth();
-
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative h-[90vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=2070" 
-            alt="Buffet Spread" 
+          <img
+            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=2070"
+            alt="Buffet Spread"
             className="w-full h-full object-cover opacity-20"
             referrerPolicy="no-referrer"
           />
@@ -23,7 +20,7 @@ export function HomePage() {
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
@@ -42,13 +39,6 @@ export function HomePage() {
                   Explore Packages <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              {!user && (
-                <Link to="/auth">
-                  <Button size="lg" variant="outline" className="rounded-full px-8 h-14 text-lg border-brand-olive text-brand-olive hover:bg-brand-olive/5">
-                    Join the Club
-                  </Button>
-                </Link>
-              )}
             </div>
           </motion.div>
         </div>
@@ -58,17 +48,17 @@ export function HomePage() {
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-12">
-            <FeatureCard 
+            <FeatureCard
               icon={<Star className="h-8 w-8 text-brand-olive" />}
               title="Premium Selection"
               description="Only the finest ingredients sourced daily from local markets and global suppliers."
             />
-            <FeatureCard 
+            <FeatureCard
               icon={<Clock className="h-8 w-8 text-brand-olive" />}
               title="Flexible Sessions"
               description="Choose from lunch, brunch, or dinner sessions that fit your schedule perfectly."
             />
-            <FeatureCard 
+            <FeatureCard
               icon={<Users className="h-8 w-8 text-brand-olive" />}
               title="Group Friendly"
               description="Spacious seating and tailored packages for family gatherings or corporate events."
@@ -99,7 +89,7 @@ export function HomePage() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ y: -10 }}
       className="p-8 rounded-3xl bg-brand-cream/30 border border-brand-cream hover:shadow-xl transition-all"
     >

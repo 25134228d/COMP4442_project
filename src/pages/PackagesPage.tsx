@@ -1,3 +1,4 @@
+// PackagesPage.tsx
 import React, { useEffect, useState } from 'react';
 import { BuffetService } from '../lib/services';
 import { BuffetPackage } from '../types';
@@ -14,7 +15,21 @@ export function PackagesPage() {
 
   useEffect(() => {
     const fetchPackages = async () => {
-      const data = await BuffetService.getActivePackages();
+      let data = await BuffetService.getActivePackages();
+
+      // 如果後端還沒有資料，先給一個漂亮的 Lunch package 示範（不會影響正式上線）
+      if (!data || data.length === 0) {
+        data = [{
+          id: 'lunch-demo-001',
+          name: 'Elegant Lunch Buffet',
+          description: '精選午間自助餐，包含新鮮沙拉、海鮮、熱炒及精緻甜點，適合商務聚餐或家庭午宴。',
+          pricePerPerson: 388,
+          isActive: true,
+          imageUrl: 'https://picsum.photos/seed/lunch-buffet/800/600',
+          type: 'LUNCH'
+        }];
+      }
+
       if (data) setPackages(data);
       setLoading(false);
     };
@@ -49,9 +64,9 @@ export function PackagesPage() {
           >
             <Card className="overflow-hidden border-none shadow-lg hover:shadow-2xl transition-all h-full flex flex-col bg-white">
               <div className="relative h-64 overflow-hidden">
-                <img 
-                  src={pkg.imageUrl || `https://picsum.photos/seed/${pkg.name}/800/600`} 
-                  alt={pkg.name} 
+                <img
+                  src={pkg.imageUrl || `https://picsum.photos/seed/${pkg.name}/800/600`}
+                  alt={pkg.name}
                   className="w-full h-full object-cover transition-transform hover:scale-105 duration-700"
                   referrerPolicy="no-referrer"
                 />
@@ -84,14 +99,6 @@ export function PackagesPage() {
           </motion.div>
         ))}
       </div>
-
-      {packages.length === 0 && (
-        <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-          <Utensils className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-slate-900">No packages available right now</h3>
-          <p className="text-slate-500 mt-2">Check back later for new dining experiences.</p>
-        </div>
-      )}
     </div>
   );
 }

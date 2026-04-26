@@ -6,6 +6,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../components/ui/dialog';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Calendar, Clock, Users, XCircle, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -24,14 +25,17 @@ export function MyBookingsPage() {
 
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       const data = await BuffetService.getMyReservations(user.uid);
       if (data) {
         const allSessions = await BuffetService.getAllSessions();
         const enriched = await Promise.all(data.map(async (b) => {
           const session = allSessions.find(s => s.id === b.sessionId);
           const pkg = session ? await BuffetService.getPackageById(session.packageId) : undefined;
-          
+
           return { ...b, session, pkg };
         }));
         setBookings(enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
@@ -43,7 +47,7 @@ export function MyBookingsPage() {
 
   const confirmCancel = async () => {
     if (!cancelBookingId) return;
-    
+
     try {
       await BuffetService.updateReservationStatus(cancelBookingId, 'CANCELLED');
       setBookings(prev => prev.map(b => b.id === cancelBookingId ? { ...b, status: 'CANCELLED' } : b));
@@ -57,6 +61,20 @@ export function MyBookingsPage() {
   };
 
   if (loading) return <div className="container py-20 text-center">Loading your bookings...</div>;
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-20 max-w-3xl text-center">
+        <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 shadow-sm">
+          <h1 className="text-4xl serif mb-4">No active booking profile</h1>
+          <p className="text-slate-500 mb-8">Please complete one reservation first. We will then show all your bookings here.</p>
+          <Link to="/packages">
+            <Button className="bg-brand-olive rounded-full px-8 h-11">Browse Packages</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
@@ -76,9 +94,9 @@ export function MyBookingsPage() {
             <Card className="border-none shadow-md hover:shadow-xl transition-all overflow-hidden bg-white">
               <CardContent className="p-0 flex flex-col md:flex-row">
                 <div className="w-full md:w-48 h-32 md:h-auto bg-slate-100">
-                  <img 
-                    src={booking.pkg?.imageUrl || `https://picsum.photos/seed/${booking.pkg?.name}/400/300`} 
-                    alt={booking.pkg?.name} 
+                  <img
+                    src={booking.pkg?.imageUrl || `https://picsum.photos/seed/${booking.pkg?.name}/400/300`}
+                    alt={booking.pkg?.name}
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
@@ -92,7 +110,7 @@ export function MyBookingsPage() {
                       </div>
                       <p className="text-sm text-slate-500 uppercase tracking-widest font-semibold">{booking.pkg?.type}</p>
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-6 text-sm">
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar className="h-4 w-4 text-brand-olive" />
@@ -114,11 +132,11 @@ export function MyBookingsPage() {
                       <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
                       <p className="text-2xl font-bold text-brand-olive">${(booking.pkg?.pricePerPerson || 0) * booking.guestCount}</p>
                     </div>
-                    
+
                     {booking.status === 'PENDING' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
                         onClick={() => setCancelBookingId(booking.id)}
                       >

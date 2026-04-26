@@ -1,93 +1,186 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BuffetService } from '../lib/services';
 import { BuffetPackage, DiningSession } from '../types';
 import { useAuth } from '../lib/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Calendar } from '../components/ui/calendar';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
-import { Users, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Users, Calendar as CalendarIcon, Clock } from 'lucide-react';
+
+const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+const minutesToTime = (minutes: number) => {
+  const h = Math.floor(minutes / 60).toString().padStart(2, '0');
+  const m = (minutes % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+};
+
+const buildRandomSessions = (packageId: string, type: string): Omit<DiningSession, 'id'>[] => {
+  const sessions: Omit<DiningSession, 'id'>[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const config = {
+    BRUNCH: { startMin: 540, startMax: 630, durationMin: 105, durationMax: 150 },
+    LUNCH: { startMin: 660, startMax: 780, durationMin: 90, durationMax: 135 },
+    DINNER: { startMin: 1050, startMax: 1170, durationMin: 120, durationMax: 180 },
+  }[type] || { startMin: 720, startMax: 840, durationMin: 105, durationMax: 150 };
+
+  for (let dayOffset = 1; dayOffset <= 5; dayOffset++) {
+    const sessionDate = new Date(today);
+    sessionDate.setDate(today.getDate() + dayOffset);
+    const dateStr = sessionDate.toISOString().split('T')[0];
+
+    for (let i = 0; i < 2; i++) {
+      const start = randomInt(config.startMin, config.startMax);
+      const roundedStart = Math.round(start / 15) * 15;
+      const duration = Math.round(randomInt(config.durationMin, config.durationMax) / 15) * 15;
+      const end = Math.min(roundedStart + duration, 1380);
+      const maxCapacity = randomInt(45, 120);
+      const currentBooked = randomInt(0, Math.floor(maxCapacity * 0.4));
+
+      sessions.push({
+        packageId,
+        sessionDate: dateStr,
+        startTime: minutesToTime(roundedStart),
+        endTime: minutesToTime(end),
+        maxCapacity,
+        currentBooked,
+        status: 'OPEN',
+      });
+    }
+  }
+
+  return sessions;
+};
 
 export function BookingPage() {
   const { packageId } = useParams<{ packageId: string }>();
-  const { user, profile } = useAuth();
+  const { user, profile, login } = useAuth();
   const navigate = useNavigate();
 
   const [pkg, setPkg] = useState<BuffetPackage | null>(null);
   const [sessions, setSessions] = useState<DiningSession[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedSession, setSelectedSession] = useState<DiningSession | null>(null);
-  const [guestCount, setGuestCount] = useState(1);
-  const [specialRequest, setSpecialRequest] = useState('');
-  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [filterStartDate, setFilterStartDate] = useState<string>('');
-  const [filterEndDate, setFilterEndDate] = useState<string>('');
+
+  const [contactName, setContactName] = useState(profile?.name || '');
+  const [contactEmail, setContactEmail] = useState(user?.email || profile?.email || '');
+  const [contactPhone, setContactPhone] = useState(profile?.phone || '');
+  const [guestCount, setGuestCount] = useState(2);
+  const [specialRequest, setSpecialRequest] = useState('');
+
+  useEffect(() => {
+    if (profile?.name) setContactName(profile.name);
+    if (user?.email || profile?.email) setContactEmail(user?.email || profile?.email || '');
+    if (profile?.phone) setContactPhone(profile.phone);
+  }, [profile, user]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!packageId) return;
-      
-      const pkgData = await BuffetService.getPackageById(packageId);
-      if (pkgData) {
+      try {
+        const [pkgData, sessionData] = await Promise.all([
+          BuffetService.getPackageById(packageId),
+          BuffetService.getSessionsByPackage(packageId),
+        ]);
+
         setPkg(pkgData);
+
+        if (!sessionData || sessionData.length === 0) {
+          const generated = buildRandomSessions(packageId, pkgData.type);
+          const created = await Promise.all(generated.map((s) => BuffetService.createSession(s)));
+          setSessions(created);
+        } else {
+          setSessions(sessionData);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to load booking data.');
+      } finally {
+        setLoading(false);
       }
-      
-      const sessionData = await BuffetService.getSessionsByPackage(packageId);
-      if (sessionData) setSessions(sessionData);
-      
-      setLoading(false);
     };
+
     fetchData();
   }, [packageId]);
 
-  const openSessions = sessions.filter(s => {
-    if (s.status !== 'OPEN') return false;
-    const sessionDate = new Date(s.sessionDate);
-    if (sessionDate < new Date(new Date().setHours(0,0,0,0))) return false;
-    
-    if (filterStartDate && sessionDate < new Date(filterStartDate)) return false;
-    if (filterEndDate && sessionDate > new Date(filterEndDate)) return false;
-    
-    return true;
-  });
-  
-  const sessionsByDate = openSessions.reduce((acc, session) => {
-    if (!acc[session.sessionDate]) {
-      acc[session.sessionDate] = [];
-    }
-    acc[session.sessionDate].push(session);
-    return acc;
-  }, {} as Record<string, DiningSession[]>);
+  const openSessions = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const sortedDates = Object.keys(sessionsByDate).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    return sessions
+      .filter((s) => s.status === 'OPEN' && new Date(s.sessionDate) >= today)
+      .sort((a, b) => {
+        const dateDiff = new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return a.startTime.localeCompare(b.startTime);
+      });
+  }, [sessions]);
+
+  const sessionsByDate = useMemo(
+    () =>
+      openSessions.reduce((acc, session) => {
+        if (!acc[session.sessionDate]) {
+          acc[session.sessionDate] = [];
+        }
+        acc[session.sessionDate].push(session);
+        return acc;
+      }, {} as Record<string, DiningSession[]>),
+    [openSessions],
+  );
+
+  const sortedDates = useMemo(
+    () => Object.keys(sessionsByDate).sort((a, b) => new Date(a).getTime() - new Date(b).getTime()),
+    [sessionsByDate],
+  );
+
+  const remainingSeats = selectedSession
+    ? selectedSession.maxCapacity - selectedSession.currentBooked
+    : 0;
 
   const handleBooking = async () => {
-    if (!user || !selectedSession || !pkg) return;
-    
+    if (!selectedSession || !pkg) return;
+
+    if (!contactName.trim() || !contactEmail.trim() || !contactPhone.trim()) {
+      toast.error('Please fill in your personal details.');
+      return;
+    }
+
+    if (guestCount < 1 || guestCount > remainingSeats) {
+      toast.error(`Guest count must be between 1 and ${remainingSeats}.`);
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const bookingUser = await login(contactEmail.trim());
+      const requestDetails = [
+        `Contact Name: ${contactName.trim()}`,
+        `Contact Phone: ${contactPhone.trim()}`,
+        specialRequest.trim() ? `Notes: ${specialRequest.trim()}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | ');
 
       await BuffetService.createReservation({
-        userId: user.uid,
+        userId: bookingUser.uid,
         sessionId: selectedSession.id,
         guestCount,
-        specialRequest,
+        specialRequest: requestDetails,
         status: 'PENDING',
         updatedAt: new Date().toISOString(),
       });
-      
-      setStep(4);
+
       toast.success('Reservation successful!');
+      navigate('/my-bookings');
     } catch (error) {
       console.error(error);
       toast.error('Failed to book. Please try again.');
@@ -100,269 +193,164 @@ export function BookingPage() {
   if (!pkg) return <div className="container py-20 text-center">Package not found.</div>;
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="mb-12 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl serif mb-2">Reserve Your Table</h1>
-          <p className="text-slate-500 font-medium">{pkg.name} • ${pkg.pricePerPerson} per person</p>
-        </div>
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => (
-            <div 
-              key={i} 
-              className={`h-2 w-8 rounded-full transition-all ${step >= i ? 'bg-brand-olive' : 'bg-slate-200'}`} 
-            />
-          ))}
-        </div>
+    <div className="container mx-auto px-4 py-10 max-w-5xl">
+      <div className="mb-8 rounded-3xl bg-gradient-to-r from-brand-olive/10 to-brand-cream p-8 border shadow-sm">
+        <h1 className="text-4xl serif mb-2">Reserve Your Table</h1>
+        <p className="text-slate-600 font-medium">{pkg.name} • ${pkg.pricePerPerson} per person</p>
       </div>
 
-      <AnimatePresence mode="wait">
-        {step === 1 && (
-          <motion.div 
-            key="step1"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="max-w-3xl mx-auto"
-          >
-            <Card className="border-none shadow-xl bg-white mb-8">
-              <CardHeader className="bg-slate-50 border-b pb-6">
-                <CardTitle className="flex items-center gap-2 serif text-2xl">
-                  <CalendarIcon className="h-6 w-6 text-brand-olive" /> Select a Session
-                </CardTitle>
-                <p className="text-slate-500 mt-2">Choose from our available dates and times below.</p>
-                
-                <div className="mt-6 flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl shadow-sm border">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="filter-start-date" className="text-xs font-bold text-slate-500 uppercase">From</Label>
-                    <Input 
-                      id="filter-start-date" 
-                      type="date" 
-                      className="h-10 text-sm w-40"
-                      value={filterStartDate}
-                      onChange={(e) => setFilterStartDate(e.target.value)}
-                    />
+      <Card className="border-none shadow-xl bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 serif text-2xl">
+            <CalendarIcon className="h-6 w-6 text-brand-olive" /> Select a Timeslot
+          </CardTitle>
+          <p className="text-slate-500 mt-1">Pick your preferred session. A quick booking form will expand below.</p>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {sortedDates.length > 0 ? (
+            <div className="space-y-6">
+              {sortedDates.map((date) => (
+                <div key={date}>
+                  <h3 className="text-lg font-bold serif mb-3 text-slate-800">
+                    {format(new Date(date), 'EEEE, MMMM do, yyyy')}
+                  </h3>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {sessionsByDate[date].map((session) => {
+                      const seatsLeft = session.maxCapacity - session.currentBooked;
+                      return (
+                        <button
+                          key={session.id}
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setGuestCount((prev) => Math.min(Math.max(prev, 1), seatsLeft || 1));
+                          }}
+                          className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${selectedSession?.id === session.id
+                            ? 'border-brand-olive bg-brand-olive/5 ring-1 ring-brand-olive'
+                            : 'border-slate-100 hover:border-slate-300 bg-white'
+                            }`}
+                        >
+                          <div className="flex justify-between items-start w-full mb-2">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-brand-olive" />
+                              <span className="font-bold">{session.startTime} - {session.endTime}</span>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] uppercase tracking-tighter bg-white">
+                              {seatsLeft} seats left
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-2">
+                            {pkg.type} SESSION
+                          </p>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="filter-end-date" className="text-xs font-bold text-slate-500 uppercase">To</Label>
-                    <Input 
-                      id="filter-end-date" 
-                      type="date" 
-                      className="h-10 text-sm w-40"
-                      value={filterEndDate}
-                      onChange={(e) => setFilterEndDate(e.target.value)}
-                    />
-                  </div>
-                  {(filterStartDate || filterEndDate) && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => { setFilterStartDate(''); setFilterEndDate(''); }}
-                      className="text-slate-500 hover:text-slate-700"
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {sortedDates.length > 0 ? (
-                  <div className="divide-y">
-                    {sortedDates.map(date => (
-                      <div key={date} className="p-6">
-                        <h3 className="text-lg font-bold serif mb-4 text-slate-800">
-                          {format(new Date(date), 'EEEE, MMMM do, yyyy')}
-                        </h3>
-                        <div className="grid sm:grid-cols-2 gap-3">
-                          {sessionsByDate[date].map(session => (
-                            <button
-                              key={session.id}
-                              onClick={() => {
-                                setSelectedSession(session);
-                                setSelectedDate(new Date(session.sessionDate));
-                              }}
-                              className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
-                                selectedSession?.id === session.id 
-                                  ? 'border-brand-olive bg-brand-olive/5 ring-1 ring-brand-olive' 
-                                  : 'border-slate-100 hover:border-slate-300 bg-white'
-                              }`}
-                            >
-                              <div className="flex justify-between items-start w-full mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4 text-brand-olive" />
-                                  <span className="font-bold">{session.startTime} - {session.endTime}</span>
-                                </div>
-                                <Badge variant="outline" className="text-[10px] uppercase tracking-tighter bg-white">
-                                  {session.maxCapacity - session.currentBooked} seats left
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-2">
-                                {pkg.type} SESSION
-                              </p>
-                            </button>
-                          ))}
-                        </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center border rounded-2xl border-dashed">
+              <p className="text-slate-500">No sessions available for this package.</p>
+            </div>
+          )}
+
+          <AnimatePresence>
+            {selectedSession && (
+              <motion.div
+                initial={{ opacity: 0, y: 16, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                exit={{ opacity: 0, y: 8, height: 0 }}
+                className="overflow-hidden"
+              >
+                <Card className="border-brand-olive/30 bg-brand-olive/[0.03] shadow-md">
+                  <CardHeader>
+                    <CardTitle className="text-xl serif">Your Details</CardTitle>
+                    <p className="text-sm text-slate-500">
+                      {format(new Date(selectedSession.sessionDate), 'PPP')} • {selectedSession.startTime} - {selectedSession.endTime}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-name">Full Name</Label>
+                        <Input
+                          id="contact-name"
+                          className="h-11"
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          placeholder="e.g. Chan Tai Man"
+                        />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-12 text-center">
-                    <p className="text-slate-500 text-lg">No sessions available for this package.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-email">Email</Label>
+                        <Input
+                          id="contact-email"
+                          type="email"
+                          className="h-11"
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          placeholder="you@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-phone">Phone Number</Label>
+                        <Input
+                          id="contact-phone"
+                          className="h-11"
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          placeholder="e.g. +852 9123 4567"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="guest-count" className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-brand-olive" /> Number of Guests
+                        </Label>
+                        <Input
+                          id="guest-count"
+                          type="number"
+                          min={1}
+                          max={remainingSeats}
+                          className="h-11"
+                          value={guestCount}
+                          onChange={(e) => setGuestCount(Number(e.target.value))}
+                        />
+                        <p className="text-xs text-slate-500">Available: {remainingSeats} seats</p>
+                      </div>
+                    </div>
 
-            <div className="flex justify-end">
-              <Button 
-                className="w-full sm:w-auto bg-brand-olive h-12 rounded-full px-8 text-lg" 
-                disabled={!selectedSession}
-                onClick={() => setStep(2)}
-              >
-                Next Step <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </motion.div>
-        )}
+                    <div className="space-y-2">
+                      <Label htmlFor="special-request">Special Requests (Optional)</Label>
+                      <Input
+                        id="special-request"
+                        className="h-11"
+                        value={specialRequest}
+                        onChange={(e) => setSpecialRequest(e.target.value)}
+                        placeholder="Dietary requirements, allergies, birthday setup..."
+                      />
+                    </div>
 
-        {step === 2 && (
-          <motion.div 
-            key="step2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="max-w-xl mx-auto space-y-8"
-          >
-            <Card className="border-none shadow-xl bg-white p-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">Number of Guests</Label>
-                  <div className="flex items-center gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="h-12 w-12 rounded-full"
-                      onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                    >
-                      -
-                    </Button>
-                    <span className="text-3xl font-bold w-12 text-center">{guestCount}</span>
-                    <Button 
-                      variant="outline" 
-                      className="h-12 w-12 rounded-full"
-                      onClick={() => setGuestCount(Math.min(selectedSession!.maxCapacity - selectedSession!.currentBooked, guestCount + 1))}
-                    >
-                      +
-                    </Button>
-                    <Users className="h-6 w-6 text-slate-300 ml-auto" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">Special Requests</Label>
-                  <Input 
-                    placeholder="Dietary requirements, allergies, etc." 
-                    className="h-12 rounded-xl"
-                    value={specialRequest}
-                    onChange={(e) => setSpecialRequest(e.target.value)}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            <div className="flex gap-4">
-              <Button variant="ghost" className="flex-1 h-12 rounded-full" onClick={() => setStep(1)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button className="flex-[2] bg-brand-olive h-12 rounded-full" onClick={() => setStep(3)}>
-                Review Booking <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 3 && (
-          <motion.div 
-            key="step3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="max-w-xl mx-auto space-y-8"
-          >
-            <Card className="border-none shadow-xl bg-white overflow-hidden">
-              <div className="bg-brand-olive p-6 text-white">
-                <h3 className="text-2xl serif">Booking Summary</h3>
-              </div>
-              <CardContent className="p-8 space-y-6">
-                <div className="grid grid-cols-2 gap-y-6">
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Package</p>
-                    <p className="font-bold">{pkg.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Date</p>
-                    <p className="font-bold">{selectedDate ? format(selectedDate, 'PPP') : ''}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Time</p>
-                    <p className="font-bold">{selectedSession?.startTime} - {selectedSession?.endTime}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Guests</p>
-                    <p className="font-bold">{guestCount} {guestCount === 1 ? 'Person' : 'People'}</p>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
-                  <span className="text-lg font-bold serif">Estimated Total</span>
-                  <span className="text-3xl font-bold text-brand-olive">${pkg.pricePerPerson * guestCount}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-4">
-              <Button variant="ghost" className="flex-1 h-12 rounded-full" onClick={() => setStep(2)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button 
-                className="flex-[2] bg-brand-olive h-12 rounded-full" 
-                onClick={handleBooking}
-                disabled={submitting}
-              >
-                {submitting ? 'Processing...' : 'Confirm Reservation'}
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 4 && (
-          <motion.div 
-            key="step4"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="max-w-md mx-auto text-center space-y-8 py-12"
-          >
-            <div className="flex justify-center">
-              <div className="bg-green-100 p-6 rounded-full">
-                <CheckCircle2 className="h-16 w-16 text-green-600" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h2 className="text-4xl serif">Reservation Confirmed!</h2>
-              <p className="text-slate-500">
-                Thank you for choosing BuffetEase. We've sent a confirmation email to your inbox.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Button className="bg-brand-olive h-12 rounded-full" onClick={() => navigate('/my-bookings')}>
-                View My Bookings
-              </Button>
-              <Button variant="ghost" className="h-12 rounded-full" onClick={() => navigate('/')}>
-                Return to Home
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Estimated Total</p>
+                        <p className="text-3xl font-bold text-brand-olive">${pkg.pricePerPerson * guestCount}</p>
+                      </div>
+                      <Button
+                        className="bg-brand-olive h-11 rounded-full px-8"
+                        onClick={handleBooking}
+                        disabled={submitting}
+                      >
+                        {submitting ? 'Processing...' : 'Confirm Reservation'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
     </div>
   );
 }

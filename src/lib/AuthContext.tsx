@@ -18,7 +18,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string) => Promise<ApiUser>;
   logout: () => void;
 }
 
@@ -27,9 +27,11 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   isAdmin: false,
-  login: async () => { },
+  login: async () => ({ uid: '', email: '', displayName: '' }),
   logout: () => { },
 });
+
+const AUTH_STORAGE_KEY = 'buffetease-auth-session';
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -39,6 +41,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const cachedSession = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (cachedSession) {
+      try {
+        const parsed = JSON.parse(cachedSession) as { user: ApiUser; profile: UserProfile };
+        setUser(parsed.user);
+        setProfile(parsed.profile);
+      } catch {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    }
     setLoading(false);
   }, []);
 
@@ -49,6 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(user);
       setProfile(profile);
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user, profile }));
+      return user;
     } catch (error) {
       console.error('Login failed', error);
       throw error;
@@ -58,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setProfile(null);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   const isAdmin = profile?.role === 'ADMIN';
