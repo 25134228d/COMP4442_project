@@ -46,6 +46,34 @@ BuffetEase includes:
 
 ---
 
+## Initial Setup on Ubuntu
+
+Install the required tools on Ubuntu:
+
+```bash
+sudo apt install nodejs npm
+sudo apt install -y nodejs
+sudo apt install maven
+```
+
+Check the installation:
+
+```bash
+node -v
+npm -v
+```
+
+In VS Code, install the Extension Pack for Java.
+
+Then start the backend:
+
+```bash
+cd springboot-server
+mvn spring-boot:run
+```
+
+---
+
 ## Prerequisites
 
 Install the following tools before running locally:
