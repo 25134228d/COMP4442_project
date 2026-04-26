@@ -3,6 +3,26 @@ import { BuffetPackage, DiningSession, Reservation } from '../types';
 
 // 設定基礎 API 路徑 (對應到你的 Spring Boot Controller)
 const API_BASE_URL = '/api';
+const GUEST_RESERVATION_KEY = 'buffetease-guest-reservation-id';
+
+const createGuestReservationId = () =>
+  `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+export const GuestReservationSession = {
+  getGuestId(): string | null {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(GUEST_RESERVATION_KEY);
+  },
+
+  getOrCreateGuestId(): string {
+    const existing = this.getGuestId();
+    if (existing) return existing;
+
+    const generated = createGuestReservationId();
+    sessionStorage.setItem(GUEST_RESERVATION_KEY, generated);
+    return generated;
+  },
+};
 
 export const BuffetService = {
   // ============================

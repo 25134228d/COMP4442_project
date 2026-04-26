@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BuffetService } from '../lib/services';
+import { BuffetService, GuestReservationSession } from '../lib/services';
 import { BuffetPackage, DiningSession } from '../types';
-import { useAuth } from '../lib/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -62,7 +61,6 @@ const buildRandomSessions = (packageId: string, type: string): Omit<DiningSessio
 
 export function BookingPage() {
   const { packageId } = useParams<{ packageId: string }>();
-  const { user, profile, login } = useAuth();
   const navigate = useNavigate();
 
   const [pkg, setPkg] = useState<BuffetPackage | null>(null);
@@ -71,17 +69,11 @@ export function BookingPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [contactName, setContactName] = useState(profile?.name || '');
-  const [contactEmail, setContactEmail] = useState(user?.email || profile?.email || '');
-  const [contactPhone, setContactPhone] = useState(profile?.phone || '');
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [guestCount, setGuestCount] = useState(2);
   const [specialRequest, setSpecialRequest] = useState('');
-
-  useEffect(() => {
-    if (profile?.name) setContactName(profile.name);
-    if (user?.email || profile?.email) setContactEmail(user?.email || profile?.email || '');
-    if (profile?.phone) setContactPhone(profile.phone);
-  }, [profile, user]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -161,7 +153,7 @@ export function BookingPage() {
 
     setSubmitting(true);
     try {
-      const bookingUser = await login(contactEmail.trim());
+      const guestReservationId = GuestReservationSession.getOrCreateGuestId();
       const requestDetails = [
         `Contact Name: ${contactName.trim()}`,
         `Contact Phone: ${contactPhone.trim()}`,
@@ -171,7 +163,7 @@ export function BookingPage() {
         .join(' | ');
 
       await BuffetService.createReservation({
-        userId: bookingUser.uid,
+        userId: guestReservationId,
         sessionId: selectedSession.id,
         guestCount,
         specialRequest: requestDetails,

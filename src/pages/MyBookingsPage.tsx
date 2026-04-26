@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { BuffetService } from '../lib/services';
+import { BuffetService, GuestReservationSession } from '../lib/services';
 import { Reservation, BuffetPackage, DiningSession } from '../types';
-import { useAuth } from '../lib/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Calendar, Clock, Users, XCircle, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
 
 interface BookingWithDetails extends Reservation {
   pkg?: BuffetPackage;
@@ -18,18 +15,18 @@ interface BookingWithDetails extends Reservation {
 }
 
 export function MyBookingsPage() {
-  const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user) {
+      const guestReservationId = GuestReservationSession.getGuestId();
+      if (!guestReservationId) {
         setLoading(false);
         return;
       }
-      const data = await BuffetService.getMyReservations(user.uid);
+
+      const data = await BuffetService.getMyReservations(guestReservationId);
       if (data) {
         const allSessions = await BuffetService.getAllSessions();
         const enriched = await Promise.all(data.map(async (b) => {
@@ -42,39 +39,11 @@ export function MyBookingsPage() {
       }
       setLoading(false);
     };
+
     fetchBookings();
-  }, [user]);
-
-  const confirmCancel = async () => {
-    if (!cancelBookingId) return;
-
-    try {
-      await BuffetService.updateReservationStatus(cancelBookingId, 'CANCELLED');
-      setBookings(prev => prev.map(b => b.id === cancelBookingId ? { ...b, status: 'CANCELLED' } : b));
-      toast.success('Reservation cancelled successfully');
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to cancel reservation');
-    } finally {
-      setCancelBookingId(null);
-    }
-  };
+  }, []);
 
   if (loading) return <div className="container py-20 text-center">Loading your bookings...</div>;
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-20 max-w-3xl text-center">
-        <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 shadow-sm">
-          <h1 className="text-4xl serif mb-4">No active booking profile</h1>
-          <p className="text-slate-500 mb-8">Please complete one reservation first. We will then show all your bookings here.</p>
-          <Link to="/packages">
-            <Button className="bg-brand-olive rounded-full px-8 h-11">Browse Packages</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
@@ -132,17 +101,6 @@ export function MyBookingsPage() {
                       <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
                       <p className="text-2xl font-bold text-brand-olive">${(booking.pkg?.pricePerPerson || 0) * booking.guestCount}</p>
                     </div>
-
-                    {booking.status === 'PENDING' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
-                        onClick={() => setCancelBookingId(booking.id)}
-                      >
-                        <XCircle className="h-4 w-4 mr-2" /> Cancel Reservation
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardContent>
@@ -152,30 +110,14 @@ export function MyBookingsPage() {
 
         {bookings.length === 0 && (
           <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-            <p className="text-slate-500 mb-6">You haven't made any reservations yet.</p>
-            <Button className="bg-brand-olive rounded-full px-8">Browse Packages</Button>
+            <p className="text-slate-500 mb-2">No temporary reservations found.</p>
+            <p className="text-slate-400 mb-6 text-sm">Your reservations are only stored for this browser session.</p>
+            <Link to="/packages">
+              <Button className="bg-brand-olive rounded-full px-8">Browse Packages</Button>
+            </Link>
           </div>
         )}
       </div>
-
-      <Dialog open={!!cancelBookingId} onOpenChange={(open) => !open && setCancelBookingId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel Reservation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this reservation? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-6">
-            <DialogClose render={<Button variant="outline" />}>
-              Keep Reservation
-            </DialogClose>
-            <Button variant="destructive" onClick={confirmCancel}>
-              Yes, Cancel it
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
