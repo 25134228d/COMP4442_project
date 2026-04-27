@@ -77,7 +77,6 @@ Check the installation:
 ```bash
 node -v
 npm -v
-java -version
 ```
 
 In VS Code, install the Extension Pack for Java.
@@ -179,7 +178,13 @@ mvn spring-boot:run
 
 Cause: Another process is already using port `8080`.
 
-Fix by stopping the old process, or run with another port:
+Fix by stopping the old process:
+
+```bash
+kill -9 $(lsof -t -i:8080)
+```
+
+Or run with another port:
 
 ```bash
 cd springboot-server
