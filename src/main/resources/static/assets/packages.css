@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.page-bg {
+  background: radial-gradient(circle at top left, #f3f8f2 0%, #f8fafc 45%, #f3f4f6 100%);
+}
+
+.serif {
+  font-family: 'Playfair Display', serif;
+}
+
+.brand-olive,
+.text-brand-olive {
+  color: #4a7043;
+}
+
+.bg-brand-olive {
+  background-color: #4a7043;
+}
+
+.border-brand-olive {
+  border-color: #4a7043;
+}
+
+.bg-green {
+  background-color: #166534;
+}
+
+.bg-green:hover {
+  background-color: #14532d;
+}
+
+#booking-modal {
+  backdrop-filter: blur(1px);
+}
+
+#packages-grid>div {
+  border: 1px solid rgba(74, 112, 67, 0.08);
+}
+
+#booking-modal .max-w-4xl {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+#booking-form input:focus,
+#booking-form textarea:focus {
+  outline: none;
+  border-color: #4a7043;
+  box-shadow: 0 0 0 1px #4a7043;
+}

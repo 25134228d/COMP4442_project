@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Packages - BuffetEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/packages.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+  <link rel="stylesheet" href="/assets/packages.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+    .serif {
+      font-family: 'Playfair Display', serif;
+    }
+
+    .brand-olive {
+      color: #4a7043;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 page-bg">
+
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <a href="index.html" class="flex items-center gap-3">
+        <i class="fa-solid fa-utensils text-3xl text-brand-olive"></i>
+        <h1 class="text-3xl serif font-bold">BuffetEase</h1>
+      </a>
+      <div class="flex gap-8 text-lg">
+        <a href="index.html">Home</a>
+        <a href="packages.html" class="text-brand-olive font-semibold">Packages</a>
+        <a href="about.html">About</a>
+        <a href="my-bookings.html">My Bookings</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 py-20">
+    <h1 class="text-6xl serif text-center mb-4">Our Packages</h1>
+    <p class="text-center text-xl text-gray-600 mb-16">Choose your perfect dining experience</p>
+
+    <div id="packages-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+      <!-- JavaScript will fill this -->
+    </div>
+  </div>
+
+  <!-- Booking Modal -->
+  <div id="booking-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-white rounded-3xl max-w-4xl w-full mx-4 max-h-[95vh] overflow-hidden">
+      <div class="p-8 border-b flex justify-between">
+        <h3 id="modal-package-name" class="text-3xl serif"></h3>
+        <button onclick="closeModal()" class="text-4xl leading-none hover:text-gray-400">&times;</button>
+      </div>
+
+      <div class="p-8 overflow-auto" style="max-height: 70vh;">
+        <div id="session-list" class="grid sm:grid-cols-2 gap-4 mb-10"></div>
+
+        <div id="booking-form" class="hidden bg-green-50 p-8 rounded-2xl">
+          <h4 class="text-2xl serif mb-6">Guest Information</h4>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium mb-2">Full Name</label>
+              <input id="name" type="text" class="w-full border rounded-2xl px-6 py-4" placeholder="Chan Tai Man"
+                pattern="[A-Za-z\s]+" title="Name can only contain English letters and spaces." />
+              <p class="mt-2 text-xs text-gray-500">Only English letters and spaces are allowed.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Email</label>
+              <input id="email" type="email" class="w-full border rounded-2xl px-6 py-4" placeholder="you@example.com"
+                pattern="[^\s@]+@[^\s@]+\.com" title="Email must include @ and end with .com." />
+              <p class="mt-2 text-xs text-gray-500">Must include <span class="font-semibold">@</span> and end with <span
+                  class="font-semibold">.com</span>.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Phone</label>
+              <input id="phone" type="tel" value="852-" class="w-full border rounded-2xl px-6 py-4" maxlength="12"
+                pattern="852-\d{8}" title="Phone must be 852- followed by exactly 8 digits." />
+              <p class="mt-2 text-xs text-gray-500">Prefix is fixed as <span class="font-semibold">852-</span>, then
+                enter exactly 8 digits.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Number of Guests</label>
+              <input id="guest-count" type="number" min="1" value="2" class="w-full border rounded-2xl px-6 py-4"
+                oninput="updateTotal()" />
+            </div>
+          </div>
+          <div class="mt-6">
+            <label class="block text-sm font-medium mb-2">Special Requests</label>
+            <textarea id="special-request" rows="3" class="w-full border rounded-2xl px-6 py-4"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-8 border-t bg-gray-50 flex justify-between items-center">
+        <div>
+          <span class="text-gray-500">Total</span>
+          <div id="total-price" class="text-4xl font-bold text-brand-olive"></div>
+        </div>
+        <button onclick="confirmBooking()"
+          class="bg-green-800 hover:bg-green-900 text-white px-12 py-5 rounded-full text-lg font-semibold transition-colors">
+          Confirm Reservation
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

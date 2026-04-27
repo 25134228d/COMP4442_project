@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.serif {
+  font-family: 'Playfair Display', serif;
+}
+
+.brand-olive,
+.text-brand-olive {
+  color: #4a7043;
+}
+
+.bg-brand-olive {
+  background-color: #4a7043;
+}
+
+.hero-bg {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.45)),
+    url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=2070');
+  background-size: cover;
+  background-position: center;
+}
