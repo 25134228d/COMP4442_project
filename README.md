@@ -53,7 +53,23 @@ Install the required tools on Ubuntu:
 ```bash
 sudo apt install nodejs npm
 sudo apt install -y nodejs
+sudo apt install openjdk-17-jdk
+sudo update-alternatives --config java
 sudo apt install maven
+```
+
+When prompted by `sudo update-alternatives --config java`, choose Java 17:
+
+```text
+There are 2 choices for the alternative java (providing /usr/bin/java).
+
+    Selection    Path                                         Priority   Status
+------------------------------------------------------------
+    0            /usr/lib/jvm/java-21-openjdk-amd64/bin/java   2111      auto mode
+* 1            /usr/lib/jvm/java-17-openjdk-amd64/bin/java   1711      manual mode
+    2            /usr/lib/jvm/java-21-openjdk-amd64/bin/java   2111      manual mode
+
+Press <enter> to keep the current choice[*], or type selection number: 1
 ```
 
 Check the installation:
