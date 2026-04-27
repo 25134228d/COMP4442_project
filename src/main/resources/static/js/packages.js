@@ -13,6 +13,36 @@
     lastAlertAt: 0,
   };
 
+  const curatedPackages = [
+    {
+      name: 'Classic Lunch Buffet',
+      description:
+        'A refined midday buffet with bright starters, comforting mains, and clean finishes.',
+      imageUrl:
+        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=1800',
+      type: 'Lunch',
+      pricePerPerson: 328,
+    },
+    {
+      name: 'Premium Seafood Dinner',
+      description:
+        'An evening feast featuring ocean-fresh premium selections and live carving stations.',
+      imageUrl:
+        'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=1800',
+      type: 'Dinner',
+      pricePerPerson: 688,
+    },
+    {
+      name: 'Weekend Family Brunch',
+      description:
+        'A joyful brunch experience with kid-friendly options and comforting global classics.',
+      imageUrl:
+        'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&q=80&w=1800',
+      type: 'Brunch',
+      pricePerPerson: 458,
+    },
+  ];
+
   const createGuestReservationId = () =>
     `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -223,19 +253,45 @@
     if (container) container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-12">Loading packages...</p>';
 
     try {
-      state.packages = await requestJson(`${API_BASE_URL}/packages/active`);
+      const apiPackages = await requestJson(`${API_BASE_URL}/packages/active`);
+      const normalizedApi = Array.isArray(apiPackages) ? apiPackages.slice(0, 3) : [];
+
+      if (normalizedApi.length) {
+        state.packages = normalizedApi.map((pkg, index) => {
+          const curated = curatedPackages[index] || curatedPackages[curatedPackages.length - 1];
+          return {
+            ...pkg,
+            name: curated.name,
+            description: curated.description,
+            imageUrl: curated.imageUrl,
+            type: curated.type,
+            pricePerPerson: curated.pricePerPerson,
+          };
+        });
+      } else {
+        state.packages = curatedPackages.map((pkg, index) => ({
+          id: `curated-${index + 1}`,
+          ...pkg,
+        }));
+      }
       renderPackages();
     } catch (error) {
-      if (container) {
-        container.innerHTML = '<p class="text-red-600 col-span-full text-center py-12">Failed to load packages. Please try again later.</p>';
-      }
-      console.error(error);
+      state.packages = curatedPackages.map((pkg, index) => ({
+        id: `curated-${index + 1}`,
+        ...pkg,
+      }));
+      renderPackages();
+      console.warn('Falling back to curated package list.', error);
     }
   };
 
   window.openBookingModal = (id) => {
     state.currentPackage = state.packages.find((p) => String(p.id) === String(id)) || null;
     if (!state.currentPackage) return;
+    if (String(state.currentPackage.id).startsWith('curated-')) {
+      alert('Live booking sessions are temporarily unavailable. Please try again later.');
+      return;
+    }
 
     const title = document.getElementById('modal-package-name');
     if (title) title.textContent = state.currentPackage.name;
