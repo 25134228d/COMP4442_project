@@ -77,6 +77,7 @@ Check the installation:
 ```bash
 node -v
 npm -v
+java -version
 ```
 
 In VS Code, install the Extension Pack for Java.
