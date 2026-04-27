@@ -51,3 +51,48 @@ body {
   border-color: #4a7043;
   box-shadow: 0 0 0 1px #4a7043;
 }
+
+.session-btn {
+  position: relative;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.session-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(74, 112, 67, 0.25);
+  border-color: #4a7043;
+}
+
+.session-btn__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-btn__selected {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #14532d;
+  background: rgba(22, 101, 52, 0.12);
+  border: 1px solid rgba(20, 83, 45, 0.25);
+  padding: 6px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.session-btn--selected {
+  border-color: #4a7043 !important;
+  background: rgba(74, 112, 67, 0.08) !important;
+  box-shadow: 0 10px 24px rgba(74, 112, 67, 0.18);
+  transform: translateY(-1px);
+}
+
+.session-btn--selected .session-btn__selected {
+  display: inline-flex;
+}

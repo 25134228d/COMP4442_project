@@ -129,8 +129,20 @@
         .map((session) => {
           const seatsLeft = Math.max(0, Number(session.maxCapacity) - Number(session.currentBooked));
           return `
-            <button onclick="selectSession('${session.id}')" data-session-id="${session.id}" class="session-btn p-6 border-2 border-transparent hover:border-brand-olive rounded-2xl text-left bg-white">
-              <div class="font-semibold">${formatDate(session.sessionDate)}</div>
+            <button
+              onclick="selectSession('${session.id}')"
+              data-session-id="${session.id}"
+              class="session-btn p-6 border-2 border-transparent hover:border-brand-olive rounded-2xl text-left bg-white"
+              type="button"
+              aria-pressed="false"
+            >
+              <div class="session-btn__header">
+                <div class="font-semibold">${formatDate(session.sessionDate)}</div>
+                <div class="session-btn__selected" aria-hidden="true">
+                  <i class="fa-solid fa-check"></i>
+                  <span>Selected</span>
+                </div>
+              </div>
               <div class="text-xl font-bold mt-1">${session.startTime} - ${session.endTime}</div>
               <div class="text-green-600 mt-3">${seatsLeft} seats left</div>
             </button>
@@ -150,9 +162,11 @@
     state.selectedSession = sessions.find((s) => String(s.id) === String(sessionId)) || null;
 
     document.querySelectorAll('.session-btn').forEach((btn) => {
-      btn.classList.remove('border-brand-olive', 'bg-green-50');
+      btn.classList.remove('session-btn--selected', 'border-brand-olive', 'bg-green-50');
+      btn.setAttribute('aria-pressed', 'false');
       if (btn.getAttribute('data-session-id') === String(sessionId)) {
-        btn.classList.add('border-brand-olive', 'bg-green-50');
+        btn.classList.add('session-btn--selected', 'border-brand-olive', 'bg-green-50');
+        btn.setAttribute('aria-pressed', 'true');
       }
     });
 
