@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - BuffetEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+    
+    .serif { font-family: 'Playfair Display', serif; }
+    .brand-olive { color: #4a7043; }
+    .bg-brand-olive { background-color: #4a7043; }
+    .bg-brand-cream { background-color: #f8f1e3; }
+
+    .tab-button {
+      padding: 12px 32px;
+      border-radius: 9999px;
+      transition: all 0.3s;
+    }
+    
+    .tab-button.active {
+      background-color: #4a7043;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <a href="index.html" class="flex items-center gap-3">
+        <i class="fa-solid fa-utensils text-3xl text-brand-olive"></i>
+        <h1 class="text-3xl serif font-bold">BuffetEase</h1>
+      </a>
+      <div class="flex gap-8 text-lg">
+        <a href="index.html">Home</a>
+        <a href="packages.html">Packages</a>
+        <a href="about.html" class="text-brand-olive font-semibold">About</a>
+        <a href="my-bookings.html">My Bookings</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-6xl mx-auto px-6 py-16">
+    <div class="text-center mb-12">
+      <h1 class="text-6xl md:text-7xl serif mb-6">About BuffetEase</h1>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        Discover the story behind our culinary excellence and experience the magic of our dining moments.
+      </p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex justify-center mb-12">
+      <div class="bg-white p-1.5 rounded-full border shadow-sm inline-flex">
+        <button onclick="switchTab(0)" id="tab0" class="tab-button active font-medium">Our Story</button>
+        <button onclick="switchTab(1)" id="tab1" class="tab-button font-medium">Our Team</button>
+        <button onclick="switchTab(2)" id="tab2" class="tab-button font-medium">Contact Us</button>
+      </div>
+    </div>
+
+    <!-- Tab Contents -->
+
+    <!-- Our Story -->
+    <div id="content0" class="tab-content">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div class="space-y-8">
+          <h2 class="text-4xl serif font-bold">A Journey of Flavors</h2>
+          <p class="text-lg text-gray-700 leading-relaxed">
+            Founded in 2015, BuffetEase started with a simple vision: to bring world-class culinary experiences to a single, accessible dining room. 
+            We believe that a buffet shouldn't just be about quantity, but an exploration of global cuisines crafted with the finest ingredients.
+          </p>
+          <p class="text-lg text-gray-700 leading-relaxed">
+            Over the years, we've partnered with local farmers and international spice merchants to ensure every dish tells a story. 
+            From our artisanal Sunday brunches to our premium seafood nights, every service is a celebration of food.
+          </p>
+          
+          <div class="flex gap-12 pt-8">
+            <div class="text-center">
+              <div class="text-5xl font-bold text-brand-olive">50+</div>
+              <div class="text-sm uppercase tracking-widest text-gray-500 mt-2">Daily Dishes</div>
+            </div>
+            <div class="text-center">
+              <div class="text-5xl font-bold text-brand-olive">10k+</div>
+              <div class="text-sm uppercase tracking-widest text-gray-500 mt-2">Happy Guests</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="relative rounded-3xl overflow-hidden shadow-2xl">
+          <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=1000" 
+               alt="Restaurant interior" class="w-full h-full object-cover">
+        </div>
+      </div>
+    </div>
+
+    <!-- Our Team -->
+    <div id="content1" class="tab-content hidden">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-4xl serif font-bold mb-4">Meet Our Master Chefs</h2>
+        <p class="text-gray-600 text-lg">Our kitchen is led by award-winning culinary experts with decades of international experience.</p>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Chef 1 -->
+        <div class="bg-white rounded-3xl overflow-hidden shadow-lg">
+          <div class="h-80 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&q=80&w=800" 
+                 alt="Chef Marcus Lin" class="w-full h-full object-cover">
+          </div>
+          <div class="p-8 text-center">
+            <h3 class="text-2xl serif font-bold">Chef Marcus Lin</h3>
+            <p class="text-brand-olive font-medium mt-1">Executive Chef</p>
+          </div>
+        </div>
+        
+        <!-- Chef 2 -->
+        <div class="bg-white rounded-3xl overflow-hidden shadow-lg">
+          <div class="h-80 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?auto=format&fit=crop&q=80&w=800" 
+                 alt="Chef Sarah Jenkins" class="w-full h-full object-cover">
+          </div>
+          <div class="p-8 text-center">
+            <h3 class="text-2xl serif font-bold">Chef Sarah Jenkins</h3>
+            <p class="text-brand-olive font-medium mt-1">Head Pastry Chef</p>
+          </div>
+        </div>
+        
+        <!-- Chef 3 -->
+        <div class="bg-white rounded-3xl overflow-hidden shadow-lg">
+          <div class="h-80 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=800" 
+                 alt="Chef Kenji Sato" class="w-full h-full object-cover">
+          </div>
+          <div class="p-8 text-center">
+            <h3 class="text-2xl serif font-bold">Chef Kenji Sato</h3>
+            <p class="text-brand-olive font-medium mt-1">Sushi Master</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Us -->
+    <div id="content2" class="tab-content hidden">
+      <div class="grid md:grid-cols-2 gap-16">
+        <!-- Contact Form -->
+        <div class="bg-white rounded-3xl shadow-xl p-10">
+          <h2 class="text-3xl serif font-bold mb-8">Send us a Message</h2>
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium mb-2">Your Name</label>
+              <input type="text" id="contact-name" 
+                     class="w-full border border-gray-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-brand-olive" 
+                     placeholder="Full name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Email Address</label>
+              <input type="email" id="contact-email" 
+                     class="w-full border border-gray-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-brand-olive" 
+                     placeholder="you@example.com">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Message</label>
+              <textarea id="contact-message" rows="6"
+                        class="w-full border border-gray-300 rounded-3xl px-6 py-4 focus:outline-none focus:border-brand-olive"
+                        placeholder="How can we help you?"></textarea>
+            </div>
+            <button onclick="sendMessage()" 
+                    class="w-full bg-brand-olive hover:bg-green-800 text-white py-4 rounded-full font-semibold text-lg transition">
+              Send Message
+            </button>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="space-y-12">
+          <div>
+            <h2 class="text-4xl serif font-bold mb-6">Get in Touch</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">
+              Have questions about our menu, special events, or private dining? We'd love to hear from you.
+            </p>
+          </div>
+
+          <div class="space-y-10">
+            <!-- Location -->
+            <div class="flex gap-5">
+              <div class="bg-brand-cream p-4 rounded-2xl text-brand-olive">
+                <i class="fa-solid fa-map-pin text-3xl"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-xl mb-1">Location</h3>
+                <p class="text-gray-600">11 Yuk Choi Road, Hung Hom,<br>Kowloon, Hong Kong</p>
+              </div>
+            </div>
+
+            <!-- Phone -->
+            <div class="flex gap-5">
+              <div class="bg-brand-cream p-4 rounded-2xl text-brand-olive">
+                <i class="fa-solid fa-phone text-3xl"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-xl mb-1">Phone</h3>
+                <p class="text-gray-600">(852) 1234 5678</p>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="flex gap-5">
+              <div class="bg-brand-cream p-4 rounded-2xl text-brand-olive">
+                <i class="fa-solid fa-envelope text-3xl"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-xl mb-1">Email</h3>
+                <p class="text-gray-600">
+                  25134228d@connect.polyu.edu.hk<br>
+                  25127648d@connect.polyu.edu.hk<br>
+                  25127632d@connect.polyu.edu.hk<br>
+                  25127625d@connect.polyu.edu.hk
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabIndex) {
+      // Hide all contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      
+      // Show selected content
+      document.getElementById(`content${tabIndex}`).classList.remove('hidden');
+      
+      // Update active tab button
+      document.querySelectorAll('.tab-button').forEach((btn, index) => {
+        if (index === tabIndex) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function sendMessage() {
+      const name = document.getElementById('contact-name').value.trim();
+      const email = document.getElementById('contact-email').value.trim();
+      const message = document.getElementById('contact-message').value.trim();
+
+      if (!name || !email || !message) {
+        alert("Please fill in all fields before sending.");
+        return;
+      }
+
+      alert(`Thank you, ${name}!\n\nYour message has been received. We'll get back to you soon.`);
+      
+      // Clear form
+      document.getElementById('contact-name').value = '';
+      document.getElementById('contact-email').value = '';
+      document.getElementById('contact-message').value = '';
+    }
+
+    // Set default tab to Story on page load
+    window.onload = () => {
+      switchTab(0);
+    };
+  </script>
+</body>
+</html>

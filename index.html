@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BuffetEase • Hong Kong</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+    .serif { font-family: 'Playfair Display', serif; }
+    .brand-olive { color: #4a7043; }
+    .bg-brand-olive { background-color: #4a7043; }
+    .hero-bg {
+      background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)), 
+                        url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=2070');
+      background-size: cover;
+      background-position: center;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <a href="index.html" class="flex items-center gap-3">
+        <i class="fa-solid fa-utensils text-3xl text-brand-olive"></i>
+        <h1 class="text-3xl serif font-bold">BuffetEase</h1>
+      </a>
+      <div class="flex gap-8 text-lg">
+        <a href="index.html" class="hover:text-brand-olive transition">Home</a>
+        <a href="packages.html" class="hover:text-brand-olive transition">Packages</a>
+        <a href="about.html" class="hover:text-brand-olive transition">About</a>
+        <a href="my-bookings.html" class="hover:text-brand-olive transition">My Bookings</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero-bg h-screen flex items-center text-white">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+      <h1 class="text-6xl md:text-8xl serif leading-none mb-6">
+        A Symphony<br>of <span class="italic text-amber-300">Flavors</span>
+      </h1>
+      <p class="text-2xl max-w-2xl mx-auto mb-10">Experience world-class buffet dining in Hung Hom, Hong Kong.</p>
+      <a href="packages.html" class="inline-block bg-black text-brand-olive font-semibold text-xl px-12 py-6 rounded-full hover:bg-amber-100 transition shadow-xl">
+        Explore Our Packages →
+      </a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="py-24 bg-white">
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-12">
+      <div class="text-center">
+        <i class="fa-solid fa-star text-5xl text-brand-olive mb-6"></i>
+        <h3 class="text-2xl font-bold mb-3">Premium Selection</h3>
+        <p class="text-gray-600">Only the finest ingredients sourced daily.</p>
+      </div>
+      <div class="text-center">
+        <i class="fa-solid fa-clock text-5xl text-brand-olive mb-6"></i>
+        <h3 class="text-2xl font-bold mb-3">Flexible Sessions</h3>
+        <p class="text-gray-600">Lunch, Brunch & Dinner times that suit you.</p>
+      </div>
+      <div class="text-center">
+        <i class="fa-solid fa-users text-5xl text-brand-olive mb-6"></i>
+        <h3 class="text-2xl font-bold mb-3">Perfect for Groups</h3>
+        <p class="text-gray-600">Ideal for family gatherings and corporate events.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-gray-900 text-white py-16">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+      <p class="text-2xl serif mb-2">BuffetEase</p>
+      <p class="text-gray-400">11 Yuk Choi Road, Hung Hom, Kowloon, Hong Kong</p>
+      <p class="text-gray-400 mt-1">(852) 1234 5678 • info@buffetease.hk</p>
+    </div>
+  </footer>
+
+</body>
+</html>
