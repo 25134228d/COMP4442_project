@@ -84,7 +84,6 @@ In VS Code, install the Extension Pack for Java.
 Then start the backend:
 
 ```bash
-cd springboot-server
 mvn spring-boot:run
 ```
 
@@ -115,7 +114,6 @@ npm install
 Important: run this command inside [springboot-server](springboot-server), not project root.
 
 ```bash
-cd springboot-server
 mvn spring-boot:run
 ```
 
@@ -143,7 +141,6 @@ If you want Spring Boot to serve the built frontend:
 
 ```bash
 npm run build
-cd springboot-server
 mvn spring-boot:run
 ```
 
@@ -187,7 +184,6 @@ kill -9 $(lsof -t -i:8080)
 Or run with another port:
 
 ```bash
-cd springboot-server
 mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
 ```
 
