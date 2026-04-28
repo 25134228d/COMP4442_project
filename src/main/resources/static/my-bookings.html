@@ -10,11 +10,14 @@
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
     .serif { font-family: 'Playfair Display', serif; }
     .brand-olive { color: #4a7043; }
+    .bg-brand-olive { background-color: #4a7043; }
     
     /* Ensure search button is always visible */
     .search-button {
       min-width: 120px;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
@@ -37,6 +40,7 @@
 
   <div class="max-w-5xl mx-auto px-6 py-20">
     <h1 class="text-5xl serif mb-8">My Reservations</h1>
+    <div id="page-message" class="hidden mb-6 rounded-2xl border px-5 py-4 text-sm font-medium" role="alert"></div>
     
     <!-- Email search form - Search button always visible -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
@@ -44,7 +48,7 @@
         <input type="email" id="search-email" placeholder="Enter your email address" 
                class="flex-1 border border-gray-300 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-olive focus:ring-2 focus:ring-brand-olive focus:ring-opacity-50">
         <button onclick="searchBookings()" 
-                class="search-button bg-brand-olive text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-800 transition duration-300 ease-in-out transform hover:scale-105">
+                class="search-button bg-brand-olive text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-800 transition duration-300 ease-in-out transform hover:scale-105 w-full sm:w-auto shrink-0">
           <i class="fa-solid fa-magnifying-glass mr-2"></i>
           Search
         </button>
@@ -75,13 +79,34 @@
     const API_BASE = 'http://localhost:8080';
     let currentCancelReference = null;
 
+    function showPageMessage(message, type = 'info') {
+      const messageBox = document.getElementById('page-message');
+      messageBox.textContent = message;
+      messageBox.classList.remove('hidden', 'bg-green-50', 'border-green-200', 'text-green-800', 'bg-red-50', 'border-red-200', 'text-red-800', 'bg-blue-50', 'border-blue-200', 'text-blue-800');
+
+      if (type === 'success') {
+        messageBox.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+      } else if (type === 'error') {
+        messageBox.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+      } else {
+        messageBox.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-800');
+      }
+    }
+
+    function clearPageMessage() {
+      const messageBox = document.getElementById('page-message');
+      messageBox.classList.add('hidden');
+      messageBox.textContent = '';
+    }
+
     async function searchBookings() {
       const email = document.getElementById('search-email').value.trim();
       
       if (!email) {
-        alert('Please enter your email address');
+        showPageMessage('Please enter your email address.', 'error');
         return;
       }
+      showPageMessage('Loading your reservations...', 'info');
       
       // Save email for auto-search next time
       localStorage.setItem('buffetEaseEmail', email);
@@ -105,7 +130,7 @@
         const bookings = await response.json();
         renderBookings(bookings);
       } catch (error) {
-        console.error('Error fetching bookings:', error);
+        showPageMessage('Failed to load bookings. Please make sure the backend server is running.', 'error');
         document.getElementById('bookings-list').innerHTML = `
           <div class="text-center py-12">
             <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
@@ -122,6 +147,7 @@
 
     function renderBookings(bookings) {
       const container = document.getElementById('bookings-list');
+      clearPageMessage();
       
       if (!bookings || bookings.length === 0) {
         container.innerHTML = `
@@ -215,16 +241,15 @@
         const result = await response.json();
         
         if (response.ok) {
-          alert('✅ Booking cancelled successfully');
           closeCancelModal();
           // Refresh the bookings list
           await searchBookings();
+          showPageMessage('Booking cancelled successfully.', 'success');
         } else {
-          alert(`Error: ${result.error || 'Failed to cancel booking'}`);
+          showPageMessage(result.error || 'Failed to cancel booking.', 'error');
         }
       } catch (error) {
-        console.error('Error cancelling booking:', error);
-        alert('Failed to cancel booking. Please try again.');
+        showPageMessage('Failed to cancel booking. Please try again.', 'error');
       } finally {
         button.textContent = originalText;
         button.disabled = false;

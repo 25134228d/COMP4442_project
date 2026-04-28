@@ -10,6 +10,10 @@
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
         .serif { font-family: 'Playfair Display', serif; }
         .brand-olive { color: #4a7043; }
+        .bg-brand-olive { background-color: #4a7043; }
+        .message-panel {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -45,6 +49,46 @@
         const API_BASE = 'http://localhost:8080';
         let currentPackage = null;
         let selectedSession = null;
+
+        function showMessageBox(title, message, type = 'info') {
+            const overlay = document.getElementById('message-box');
+            const icon = document.getElementById('message-box-icon');
+            const titleNode = document.getElementById('message-box-title');
+            const bodyNode = document.getElementById('message-box-body');
+            const actionButton = document.getElementById('message-box-action');
+
+            titleNode.textContent = title;
+            bodyNode.textContent = message;
+
+            icon.className = 'text-4xl';
+            actionButton.className = 'px-6 py-3 rounded-full font-semibold text-white transition';
+
+            if (type === 'success') {
+                icon.classList.add('text-green-600');
+                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                actionButton.classList.add('bg-brand-olive', 'hover:bg-green-800');
+            } else if (type === 'error') {
+                icon.classList.add('text-red-500');
+                icon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+                actionButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            } else {
+                icon.classList.add('text-brand-olive');
+                icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+                actionButton.classList.add('bg-brand-olive', 'hover:bg-green-800');
+            }
+
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
+
+        function hideMessageBox() {
+            document.getElementById('message-box').classList.add('hidden');
+            if (document.getElementById('booking-modal').classList.contains('hidden')) {
+                document.body.style.overflow = 'auto';
+                document.documentElement.style.overflow = 'auto';
+            }
+        }
 
         async function renderPackages() {
             const container = document.getElementById('packages-grid');
@@ -87,7 +131,6 @@
                 `).join('');
                 
             } catch (error) {
-                console.error('Error loading packages:', error);
                 container.innerHTML = `
                     <div class="col-span-3 text-center py-12">
                         <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
@@ -114,11 +157,12 @@
                 document.getElementById('modal-package-name').textContent = currentPackage.name;
                 document.getElementById('booking-modal').classList.remove('hidden');
                 document.getElementById('booking-form').classList.add('hidden');
+                document.body.style.overflow = 'hidden';
+                document.documentElement.style.overflow = 'hidden';
                 
                 renderSessions(sessions);
             } catch (error) {
-                console.error('Error loading package details:', error);
-                alert('Failed to load session details. Please try again.');
+                showMessageBox('Unable to load session details', 'Please try again in a moment.', 'error');
             }
         }
 
@@ -164,7 +208,7 @@
 
         async function confirmBooking() {
             if (!selectedSession) {
-                alert("Please select a session");
+                showMessageBox('Select a session', 'Please choose one available session before confirming your reservation.', 'error');
                 return;
             }
             
@@ -174,7 +218,7 @@
             const guestCount = parseInt(document.getElementById('guest-count').value);
             
             if (!name || !email || !phone) {
-                alert("Please fill in all guest information fields");
+                showMessageBox('Complete guest information', 'Please fill in your name, email, and phone number before continuing.', 'error');
                 return;
             }
             
@@ -200,7 +244,6 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(`✅ Reservation Successful!\nBooking Reference: ${result.bookingReference}\nTotal: $${result.booking.totalPrice}\nYou can view it in My Bookings.`);
                     localStorage.setItem('buffetEaseEmail', email);
                     closeModal();
                     document.getElementById('name').value = '';
@@ -208,18 +251,24 @@
                     document.getElementById('phone').value = '852-';
                     document.getElementById('guest-count').value = '2';
                     document.getElementById('special-request').value = '';
+                    showMessageBox(
+                        'Reservation Successful',
+                        `Booking Reference: ${result.bookingReference} • Total: $${result.booking.totalPrice}. You can view it in My Bookings.`,
+                        'success'
+                    );
                 } else {
-                    alert(`Error: ${result.error || 'Failed to create booking'}`);
+                    showMessageBox('Booking failed', result.error || 'Failed to create booking.', 'error');
                 }
             } catch (error) {
-                console.error('Error creating booking:', error);
-                alert('Failed to create booking. Please make sure the backend server is running.');
+                showMessageBox('Booking failed', 'Please make sure the backend server is running.', 'error');
             }
         }
 
         function closeModal() {
             document.getElementById('booking-modal').classList.add('hidden');
             selectedSession = null;
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
         }
 
         window.onload = () => {
@@ -273,6 +322,21 @@
                 <button onclick="confirmBooking()" class="bg-green-800 hover:bg-green-900 text-white px-12 py-5 rounded-full text-lg font-semibold transition-colors">
                     Confirm Reservation
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[60] px-4">
+        <div class="message-panel bg-white rounded-3xl max-w-lg w-full shadow-2xl p-8">
+            <div class="flex items-start gap-4">
+                <div id="message-box-icon" class="mt-1"></div>
+                <div class="flex-1">
+                    <h3 id="message-box-title" class="text-2xl serif mb-3"></h3>
+                    <p id="message-box-body" class="text-gray-600 leading-relaxed"></p>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end">
+                <button id="message-box-action" onclick="hideMessageBox()">OK</button>
             </div>
         </div>
     </div>
