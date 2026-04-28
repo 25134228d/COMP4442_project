@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Bookings - BuffetEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+    .serif { font-family: 'Playfair Display', serif; }
+    .brand-olive { color: #4a7043; }
+    
+    /* Ensure search button is always visible */
+    .search-button {
+      min-width: 120px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <a href="index.html" class="flex items-center gap-3">
+        <i class="fa-solid fa-utensils text-3xl text-brand-olive"></i>
+        <h1 class="text-3xl serif font-bold">BuffetEase</h1>
+      </a>
+      <div class="flex gap-8 text-lg">
+        <a href="index.html">Home</a>
+        <a href="packages.html">Packages</a>
+        <a href="about.html">About</a>
+        <a href="my-bookings.html" class="text-brand-olive font-semibold">My Bookings</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-5xl mx-auto px-6 py-20">
+    <h1 class="text-5xl serif mb-8">My Reservations</h1>
+    
+    <!-- Email search form - Search button always visible -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <input type="email" id="search-email" placeholder="Enter your email address" 
+               class="flex-1 border border-gray-300 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-olive focus:ring-2 focus:ring-brand-olive focus:ring-opacity-50">
+        <button onclick="searchBookings()" 
+                class="search-button bg-brand-olive text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-800 transition duration-300 ease-in-out transform hover:scale-105">
+          <i class="fa-solid fa-magnifying-glass mr-2"></i>
+          Search
+        </button>
+      </div>
+    </div>
+    
+    <div id="bookings-list" class="space-y-8">
+      <div class="text-center text-gray-500 py-12">
+        <i class="fa-solid fa-calendar-alt text-4xl mb-4"></i>
+        <p>Enter your email to view your reservations</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Booking Modal -->
+  <div id="cancel-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-white rounded-3xl max-w-md w-full mx-4 p-8">
+      <h3 class="text-2xl serif mb-4">Cancel Reservation</h3>
+      <p class="text-gray-600 mb-6">Are you sure you want to cancel this reservation? This action cannot be undone.</p>
+      <div class="flex gap-4">
+        <button onclick="closeCancelModal()" class="flex-1 border border-gray-300 py-3 rounded-full font-semibold hover:bg-gray-50 transition">No, Keep It</button>
+        <button onclick="confirmCancel()" class="flex-1 bg-red-600 text-white py-3 rounded-full font-semibold hover:bg-red-700 transition">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080';
+    let currentCancelReference = null;
+
+    async function searchBookings() {
+      const email = document.getElementById('search-email').value.trim();
+      
+      if (!email) {
+        alert('Please enter your email address');
+        return;
+      }
+      
+      // Save email for auto-search next time
+      localStorage.setItem('buffetEaseEmail', email);
+      
+      // Show loading state
+      const container = document.getElementById('bookings-list');
+      container.innerHTML = `
+        <div class="text-center py-12">
+          <i class="fa-solid fa-spinner fa-spin text-4xl text-brand-olive mb-4"></i>
+          <p class="text-gray-600">Loading your reservations...</p>
+        </div>
+      `;
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/bookings/email/${encodeURIComponent(email)}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const bookings = await response.json();
+        renderBookings(bookings);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        document.getElementById('bookings-list').innerHTML = `
+          <div class="text-center py-12">
+            <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
+            <p class="text-red-500 font-semibold mb-2">Failed to load bookings.</p>
+            <p class="text-gray-500 text-sm">Please make sure the backend server is running on ${API_BASE}</p>
+            <button onclick="searchBookings()" class="mt-4 bg-brand-olive text-white px-6 py-2 rounded-full hover:bg-green-800 transition">
+              <i class="fa-solid fa-rotate-right mr-2"></i>
+              Retry
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function renderBookings(bookings) {
+      const container = document.getElementById('bookings-list');
+      
+      if (!bookings || bookings.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12">
+            <i class="fa-regular fa-folder-open text-5xl text-gray-400 mb-4"></i>
+            <p class="text-gray-500 text-lg">No reservations found for this email address.</p>
+            <p class="text-gray-400 text-sm mt-2">Try a different email or book a package first.</p>
+            <a href="packages.html" class="inline-block mt-6 bg-brand-olive text-white px-8 py-3 rounded-full font-semibold hover:bg-green-800 transition">
+              <i class="fa-solid fa-utensils mr-2"></i>
+              Browse Packages
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = bookings.map(b => `
+        <div class="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div class="flex justify-between items-start flex-wrap gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-3">
+                <i class="fa-solid fa-receipt text-brand-olive text-xl"></i>
+                <h3 class="text-2xl serif font-bold text-gray-800">${b.packageName}</h3>
+              </div>
+              <p class="text-gray-600 mb-2">
+                <i class="fa-regular fa-calendar mr-2 text-brand-olive"></i>
+                ${new Date(b.sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+              <p class="text-gray-600 mb-2">
+                <i class="fa-regular fa-clock mr-2 text-brand-olive"></i>
+                ${b.sessionLabel}
+              </p>
+              <p class="text-gray-600 mb-3">
+                <i class="fa-regular fa-user mr-2 text-brand-olive"></i>
+                ${b.guestCount} Guest${b.guestCount > 1 ? 's' : ''}
+              </p>
+              ${b.specialRequests ? `<p class="text-gray-500 text-sm italic mt-2 bg-gray-50 p-3 rounded-lg">"${b.specialRequests}"</p>` : ''}
+              <p class="text-xs text-gray-400 mt-4">
+                <i class="fa-regular fa-id-card mr-1"></i>
+                Booking Reference: ${b.bookingReference}
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="px-4 py-1 text-xs font-bold rounded-full ${b.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                <i class="fa-solid ${b.status === 'CONFIRMED' ? 'fa-check-circle' : 'fa-times-circle'} mr-1"></i>
+                ${b.status}
+              </span>
+              <div class="mt-4 text-3xl font-bold text-brand-olive">
+                $${b.totalPrice}
+              </div>
+              ${b.status === 'CONFIRMED' ? `
+                <button onclick="openCancelModal('${b.bookingReference}')" 
+                        class="mt-4 text-red-600 hover:text-red-800 text-sm font-semibold transition duration-300 hover:underline">
+                  <i class="fa-regular fa-trash-can mr-1"></i>
+                  Cancel Booking
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openCancelModal(bookingReference) {
+      currentCancelReference = bookingReference;
+      document.getElementById('cancel-modal').classList.remove('hidden');
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCancelModal() {
+      document.getElementById('cancel-modal').classList.add('hidden');
+      currentCancelReference = null;
+      // Restore body scrolling
+      document.body.style.overflow = 'auto';
+    }
+
+    async function confirmCancel() {
+      if (!currentCancelReference) return;
+      
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = 'Cancelling...';
+      button.disabled = true;
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/bookings/${currentCancelReference}/cancel`, {
+          method: 'PUT'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          alert('✅ Booking cancelled successfully');
+          closeCancelModal();
+          // Refresh the bookings list
+          await searchBookings();
+        } else {
+          alert(`Error: ${result.error || 'Failed to cancel booking'}`);
+        }
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+        alert('Failed to cancel booking. Please try again.');
+      } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    }
+
+    // Auto-search if email is stored
+    window.onload = () => {
+      const savedEmail = localStorage.getItem('buffetEaseEmail');
+      if (savedEmail) {
+        document.getElementById('search-email').value = savedEmail;
+        searchBookings();
+      }
+    };
+
+    // Allow pressing Enter key to search
+    document.getElementById('search-email').addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        searchBookings();
+      }
+    });
+  </script>
+</body>
+</html>

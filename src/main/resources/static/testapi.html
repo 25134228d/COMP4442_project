@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Testing API Connection</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing connection...';
+            
+            try {
+                // Test if backend is reachable
+                const response = await fetch('http://localhost:8080/api/packages');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <h2 style="color: green;">✅ Backend is working!</h2>
+                        <p>Found ${data.length} packages</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h2 style="color: red;">❌ Backend returned error</h2>
+                        <p>Status: ${response.status}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h2 style="color: red;">❌ Cannot connect to backend</h2>
+                    <p>Error: ${error.message}</p>
+                    <p>Make sure Spring Boot is running on http://localhost:8080</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
