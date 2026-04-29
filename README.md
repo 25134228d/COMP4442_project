@@ -7,11 +7,8 @@ BuffetEase is a Spring Boot buffet reservation website with static front-end pag
 - Java 17
 - Spring Boot 3.5.14
 - Spring Web for REST controllers and HTTP endpoints
-- Spring Data JPA for repository access and entity persistence
-- Spring Validation for request validation
-- MySQL 8.x
+- MySQL 8.0.45
 - Maven with the Spring Boot Maven plugin
-- Lombok for reducing boilerplate in Java models and DTOs
 - HTML, CSS, and JavaScript for the static pages
 - Tailwind CSS from CDN for page styling
 - Font Awesome for icons
@@ -108,3 +105,6 @@ chmod +x mvnw
 - The static pages are served directly by Spring Boot.
 - The backend expects MySQL to be running locally on port `3306`.
 - If the application cannot connect to MySQL, check the username, password, and that the `buffetease_db` database exists.
+
+## Kill port Kill the process running on port 8080 (If needed)
+- kill -9 $(lsof -t -i:8080)
