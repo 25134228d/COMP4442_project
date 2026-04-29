@@ -67,9 +67,9 @@ INSERT INTO packages (name, type, description, price_per_person, image_url) VALU
 ('Signature Dinner Buffet', 'Dinner', 'An exquisite evening spread featuring live seafood station, premium carving station with roasted prime rib, and an indulgent dessert bar.', 388.00, 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=1000'),
 ('Weekend Brunch', 'Brunch', 'Perfect for lazy weekends! Includes free-flow sparkling wine, eggs benedict station, fresh seafood on ice, and a chocolate fountain.', 298.00, 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&q=80&w=1000'),
 ('Premium Seafood Feast', 'Special', 'Crab, lobster, fresh oysters, and sushi counter. A seafood lover''s dream come true with unlimited premium catches.', 488.00, 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?auto=format&fit=crop&q=80&w=1000'),
-('Luxury Afternoon Tea', 'Snack', 'An assortment of delicate pastries, finger sandwiches, and premium tea selection.', 188.00, 'https://images.unsplash.com/photo-1532376995628-4fa2d36b6b65?auto=format&fit=crop&q=80&w=1000'),
+('Luxury Afternoon Tea', 'Snack', 'An assortment of delicate pastries, finger sandwiches, and premium tea selection.', 188.00, 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80'),
 ('Family Holiday Feast', 'Family', 'Perfect for families with kids. Includes carving station, pasta bar, desserts, and a kids'' corner.', 328.00, 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=1000'),
-('Dim Sum Brunch', 'Chinese', 'Authentic Hong Kong dim sum experience with unlimited bamboo steamers, congee station, and Chinese tea pairing.', 268.00, 'https://images.unsplash.com/photo-1535069733846-51eae6b01b8c?auto=format&fit=crop&q=80&w=1000');
+('Dim Sum Brunch', 'Chinese', 'Authentic Hong Kong dim sum experience with unlimited bamboo steamers, congee station, and Chinese tea pairing.', 268.00, 'https://images.unsplash.com/photo-1769773662105-bf0b664921d6?auto=format&fit=crop&w=1200&q=80');
 
 -- Insert sample sessions
 INSERT INTO sessions (package_id, session_label, session_date, start_time, end_time, total_seats, available_seats) VALUES
