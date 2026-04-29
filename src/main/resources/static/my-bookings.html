@@ -10,6 +10,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
     .serif { font-family: 'Playfair Display', serif; }
     .brand-olive { color: #4a7043; }
+    .bg-brand-olive { background-color: #4a7043; }
     
     /* Ensure search button is always visible */
     .search-button {
@@ -19,7 +20,20 @@
   </style>
 </head>
 <body class="bg-gray-50">
-  <div id="message-box" class="fixed top-6 right-6 z-[60] hidden max-w-md rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-sm"></div>
+  <div id="message-box" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4">
+    <div class="w-full max-w-md rounded-3xl bg-white px-6 py-6 shadow-2xl">
+      <div class="flex items-start gap-4">
+        <div id="message-icon" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"></div>
+        <div class="min-w-0 flex-1">
+          <div id="message-title" class="text-lg font-semibold text-gray-900"></div>
+          <div id="message-text" class="mt-2 text-sm leading-relaxed text-gray-600 whitespace-pre-line"></div>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button id="message-close" class="rounded-full bg-[#4a7043] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#3e5f39]">OK</button>
+      </div>
+    </div>
+  </div>
   <!-- Navbar -->
   <nav class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
@@ -78,24 +92,33 @@
 
     function showMessage(type, title, message) {
       const box = document.getElementById('message-box');
+      const icon = document.getElementById('message-icon');
+      const titleNode = document.getElementById('message-title');
+      const messageNode = document.getElementById('message-text');
       const styles = {
-        success: 'border-green-200 bg-green-50 text-green-900',
-        error: 'border-red-200 bg-red-50 text-red-900',
-        info: 'border-blue-200 bg-blue-50 text-blue-900'
+        success: { icon: 'bg-green-600', symbol: 'fa-check' },
+        error: { icon: 'bg-red-600', symbol: 'fa-triangle-exclamation' },
+        info: { icon: 'bg-blue-600', symbol: 'fa-circle-info' }
       };
+      const theme = styles[type] || styles.info;
 
-      box.className = `fixed top-6 right-6 z-[60] max-w-md rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-sm ${styles[type] || styles.info}`;
-      box.innerHTML = `
-        <div class="font-semibold mb-1">${title}</div>
-        <div class="text-sm leading-relaxed whitespace-pre-line">${message}</div>
-      `;
+      icon.className = `flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${theme.icon}`;
+      icon.innerHTML = `<i class="fa-solid ${theme.symbol}"></i>`;
+      titleNode.textContent = title;
+      messageNode.textContent = message;
       box.classList.remove('hidden');
-
-      clearTimeout(window.messageBoxTimer);
-      window.messageBoxTimer = setTimeout(() => {
-        box.classList.add('hidden');
-      }, 4500);
     }
+
+    function hideMessage() {
+      document.getElementById('message-box').classList.add('hidden');
+    }
+
+    document.getElementById('message-close').addEventListener('click', hideMessage);
+    document.getElementById('message-box').addEventListener('click', (event) => {
+      if (event.target.id === 'message-box') {
+        hideMessage();
+      }
+    });
 
     async function searchBookings() {
       const email = document.getElementById('search-email').value.trim();
