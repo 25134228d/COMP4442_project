@@ -49,6 +49,14 @@ sudo mysql_secure_installation
 
 ### 5. Create the database and application user
 
+Use root to access first:
+
+```bash
+sudo mysql -u root -p
+```
+Enter Password:```root```
+
+
 ```bash
 sudo mysql
 CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin123';
@@ -59,8 +67,18 @@ FLUSH PRIVILEGES;
 ### 6. Import the schema and sample data
 
 ```bash
-mysql -u admin -p buffetease_db < schma.sql
+mysql -u admin -p
 ```
+
+Password:admin123
+
+```
+sudo mysql
+```
+
+Then,paste the schma.sql
+
+
 
 The schema file is named `schma.sql` in this repository.
 
