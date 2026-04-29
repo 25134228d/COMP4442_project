@@ -19,6 +19,7 @@
   </style>
 </head>
 <body class="bg-gray-50">
+  <div id="message-box" class="fixed top-6 right-6 z-[60] hidden max-w-md rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-sm"></div>
   <!-- Navbar -->
   <nav class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
@@ -75,11 +76,32 @@
     const API_BASE = '';
     let currentCancelReference = null;
 
+    function showMessage(type, title, message) {
+      const box = document.getElementById('message-box');
+      const styles = {
+        success: 'border-green-200 bg-green-50 text-green-900',
+        error: 'border-red-200 bg-red-50 text-red-900',
+        info: 'border-blue-200 bg-blue-50 text-blue-900'
+      };
+
+      box.className = `fixed top-6 right-6 z-[60] max-w-md rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-sm ${styles[type] || styles.info}`;
+      box.innerHTML = `
+        <div class="font-semibold mb-1">${title}</div>
+        <div class="text-sm leading-relaxed whitespace-pre-line">${message}</div>
+      `;
+      box.classList.remove('hidden');
+
+      clearTimeout(window.messageBoxTimer);
+      window.messageBoxTimer = setTimeout(() => {
+        box.classList.add('hidden');
+      }, 4500);
+    }
+
     async function searchBookings() {
       const email = document.getElementById('search-email').value.trim();
       
       if (!email) {
-        alert('Please enter your email address');
+        showMessage('error', 'Missing email', 'Please enter your email address.');
         return;
       }
       
@@ -105,7 +127,6 @@
         const bookings = await response.json();
         renderBookings(bookings);
       } catch (error) {
-        console.error('Error fetching bookings:', error);
         document.getElementById('bookings-list').innerHTML = `
           <div class="text-center py-12">
             <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
@@ -215,16 +236,15 @@
         const result = await response.json();
         
         if (response.ok) {
-          alert('✅ Booking cancelled successfully');
+          showMessage('success', 'Booking cancelled', 'Booking cancelled successfully.');
           closeCancelModal();
           // Refresh the bookings list
           await searchBookings();
         } else {
-          alert(`Error: ${result.error || 'Failed to cancel booking'}`);
+          showMessage('error', 'Unable to cancel booking', result.error || 'Failed to cancel booking');
         }
       } catch (error) {
-        console.error('Error cancelling booking:', error);
-        alert('Failed to cancel booking. Please try again.');
+        showMessage('error', 'Connection failed', 'Failed to cancel booking. Please try again.');
       } finally {
         button.textContent = originalText;
         button.disabled = false;

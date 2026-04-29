@@ -14,6 +14,8 @@
 </head>
 <body class="bg-gray-50">
 
+    <div id="message-box" class="fixed top-6 right-6 z-[60] hidden max-w-md rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-sm"></div>
+
     <nav class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
             <a href="index.html" class="flex items-center gap-3">
@@ -45,6 +47,27 @@
         const API_BASE = '';
         let currentPackage = null;
         let selectedSession = null;
+
+        function showMessage(type, title, message) {
+            const box = document.getElementById('message-box');
+            const styles = {
+                success: 'border-green-200 bg-green-50 text-green-900',
+                error: 'border-red-200 bg-red-50 text-red-900',
+                info: 'border-blue-200 bg-blue-50 text-blue-900'
+            };
+
+            box.className = `fixed top-6 right-6 z-[60] max-w-md rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-sm ${styles[type] || styles.info}`;
+            box.innerHTML = `
+                <div class="font-semibold mb-1">${title}</div>
+                <div class="text-sm leading-relaxed whitespace-pre-line">${message}</div>
+            `;
+            box.classList.remove('hidden');
+
+            clearTimeout(window.messageBoxTimer);
+            window.messageBoxTimer = setTimeout(() => {
+                box.classList.add('hidden');
+            }, 4500);
+        }
 
         async function renderPackages() {
             const container = document.getElementById('packages-grid');
@@ -87,7 +110,6 @@
                 `).join('');
                 
             } catch (error) {
-                console.error('Error loading packages:', error);
                 container.innerHTML = `
                     <div class="col-span-3 text-center py-12">
                         <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
@@ -114,11 +136,11 @@
                 document.getElementById('modal-package-name').textContent = currentPackage.name;
                 document.getElementById('booking-modal').classList.remove('hidden');
                 document.getElementById('booking-form').classList.add('hidden');
+                document.body.style.overflow = 'hidden';
                 
                 renderSessions(sessions);
             } catch (error) {
-                console.error('Error loading package details:', error);
-                alert('Failed to load session details. Please try again.');
+                showMessage('error', 'Could not open booking', 'Failed to load session details. Please try again.');
             }
         }
 
@@ -164,7 +186,7 @@
 
         async function confirmBooking() {
             if (!selectedSession) {
-                alert("Please select a session");
+                showMessage('error', 'Missing session', 'Please select a session.');
                 return;
             }
             
@@ -174,7 +196,7 @@
             const guestCount = parseInt(document.getElementById('guest-count').value);
             
             if (!name || !email || !phone) {
-                alert("Please fill in all guest information fields");
+                showMessage('error', 'Missing guest information', 'Please fill in all guest information fields.');
                 return;
             }
             
@@ -200,7 +222,7 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(`✅ Reservation Successful!\nBooking Reference: ${result.bookingReference}\nTotal: $${result.booking.totalPrice}\nYou can view it in My Bookings.`);
+                    showMessage('success', 'Reservation successful', `Booking reference: ${result.bookingReference}\nTotal: $${result.booking.totalPrice}\nYou can view it in My Bookings.`);
                     localStorage.setItem('buffetEaseEmail', email);
                     closeModal();
                     document.getElementById('name').value = '';
@@ -209,17 +231,17 @@
                     document.getElementById('guest-count').value = '2';
                     document.getElementById('special-request').value = '';
                 } else {
-                    alert(`Error: ${result.error || 'Failed to create booking'}`);
+                    showMessage('error', 'Unable to create booking', result.error || 'Failed to create booking');
                 }
             } catch (error) {
-                console.error('Error creating booking:', error);
-                alert('Failed to create booking. Please make sure the backend server is running.');
+                showMessage('error', 'Connection failed', 'Failed to create booking. Please make sure the backend server is running.');
             }
         }
 
         function closeModal() {
             document.getElementById('booking-modal').classList.add('hidden');
             selectedSession = null;
+            document.body.style.overflow = 'auto';
         }
 
         window.onload = () => {
