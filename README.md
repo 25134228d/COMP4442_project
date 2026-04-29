@@ -51,14 +51,9 @@ sudo mysql_secure_installation
 
 ```bash
 sudo mysql
-CREATE DATABASE IF NOT EXISTS buffetease_db;
-
-CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'admin123';
-ALTER USER 'admin'@'localhost' IDENTIFIED BY 'admin123';
-
-GRANT ALL PRIVILEGES ON buffetease_db.* TO 'admin'@'localhost';
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin123';
+GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost';
 FLUSH PRIVILEGES;
-EXIT;
 ```
 
 ### 6. Import the schema and sample data
