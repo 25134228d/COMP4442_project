@@ -1,18 +1,27 @@
 <!DOCTYPE html>
+<!-- my-bookings.html — My Reservations Page
+     Allows customers to look up their bookings by email and cancel CONFIRMED bookings.
+     Makes two types of API calls:
+       GET /api/bookings/email/{email}          — search bookings
+       PUT /api/bookings/{reference}/cancel     — cancel a booking
+     URL: http://localhost:8080/my-bookings.html -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Bookings - BuffetEase</title>
+  <!-- Tailwind CSS — utility-first CSS framework -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome — icons used throughout (magnifying glass, calendar, clock, etc.) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
   <style>
+    /* Playfair Display — serif font for headings */
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
     .serif { font-family: 'Playfair Display', serif; }
-    .brand-olive { color: #4a7043; }
+    .brand-olive   { color: #4a7043; }
     .bg-brand-olive { background-color: #4a7043; }
     
-    /* Ensure search button is always visible */
+    /* .search-button: ensures the search button always shows fully even on small screens */
     .search-button {
       min-width: 120px;
       display: inline-block;
@@ -20,21 +29,34 @@
   </style>
 </head>
 <body class="bg-gray-50">
+
+  <!-- ═══════════════════════════════════════════════════════
+       REUSABLE MESSAGE BOX (same pattern as packages.html)
+       Displayed by showMessage() / hidden by hideMessage().
+       z-[70] — appears above all other content including the cancel modal.
+  ═══════════════════════════════════════════════════════ -->
   <div id="message-box" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4">
     <div class="w-full max-w-md rounded-3xl bg-white px-6 py-6 shadow-2xl">
       <div class="flex items-start gap-4">
+        <!-- Icon colour is set dynamically by showMessage() -->
         <div id="message-icon" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"></div>
         <div class="min-w-0 flex-1">
+          <!-- Title and body text are set dynamically by showMessage() -->
           <div id="message-title" class="text-lg font-semibold text-gray-900"></div>
           <div id="message-text" class="mt-2 text-sm leading-relaxed text-gray-600 whitespace-pre-line"></div>
         </div>
       </div>
       <div class="mt-6 flex justify-end">
+        <!-- OK button closes the message box -->
         <button id="message-close" class="rounded-full bg-[#4a7043] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#3e5f39]">OK</button>
       </div>
     </div>
   </div>
-  <!-- Navbar -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       NAVIGATION BAR
+       "My Bookings" link is highlighted as the active page.
+  ═══════════════════════════════════════════════════════ -->
   <nav class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
       <a href="index.html" class="flex items-center gap-3">
@@ -45,7 +67,7 @@
         <a href="index.html">Home</a>
         <a href="packages.html">Packages</a>
         <a href="about.html">About</a>
-        <a href="my-bookings.html" class="text-brand-olive font-semibold">My Bookings</a>
+        <a href="my-bookings.html" class="text-brand-olive font-semibold">My Bookings</a> <!-- Active page -->
       </div>
     </div>
   </nav>
@@ -53,11 +75,17 @@
   <div class="max-w-5xl mx-auto px-6 py-20">
     <h1 class="text-5xl serif mb-8">My Reservations</h1>
     
-    <!-- Email search form - Search button always visible -->
+    <!-- ═══════════════════════════════════════════════════════
+         EMAIL SEARCH FORM
+         Customer enters their email and clicks Search (or presses Enter).
+         searchBookings() is triggered to fetch their bookings from the API.
+    ═══════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
       <div class="flex flex-col sm:flex-row gap-4">
+        <!-- Email input field — value is read by searchBookings() -->
         <input type="email" id="search-email" placeholder="Enter your email address" 
                class="flex-1 border border-gray-300 rounded-xl px-6 py-4 focus:outline-none focus:border-brand-olive focus:ring-2 focus:ring-brand-olive focus:ring-opacity-50">
+        <!-- Search button — onclick triggers searchBookings() -->
         <button onclick="searchBookings()" 
                 class="search-button bg-brand-olive text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-800 transition duration-300 ease-in-out transform hover:scale-105">
           <i class="fa-solid fa-magnifying-glass mr-2"></i>
@@ -66,7 +94,13 @@
       </div>
     </div>
     
+    <!-- ═══════════════════════════════════════════════════════
+         BOOKINGS LIST
+         Initially shows a "enter your email" placeholder.
+         renderBookings() replaces this content with booking cards.
+    ═══════════════════════════════════════════════════════ -->
     <div id="bookings-list" class="space-y-8">
+      <!-- Default state before any search is performed -->
       <div class="text-center text-gray-500 py-12">
         <i class="fa-solid fa-calendar-alt text-4xl mb-4"></i>
         <p>Enter your email to view your reservations</p>
@@ -74,31 +108,46 @@
     </div>
   </div>
 
-  <!-- Cancel Booking Modal -->
+  <!-- ═══════════════════════════════════════════════════════
+       CANCEL BOOKING CONFIRMATION MODAL
+       Shown when the customer clicks "Cancel Booking" on a booking card.
+       openCancelModal() shows it; closeCancelModal() hides it.
+       "Yes, Cancel" button calls confirmCancel() which sends PUT /api/bookings/{ref}/cancel.
+  ═══════════════════════════════════════════════════════ -->
   <div id="cancel-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
     <div class="bg-white rounded-3xl max-w-md w-full mx-4 p-8">
       <h3 class="text-2xl serif mb-4">Cancel Reservation</h3>
       <p class="text-gray-600 mb-6">Are you sure you want to cancel this reservation? This action cannot be undone.</p>
       <div class="flex gap-4">
+        <!-- "No, Keep It" closes the modal without doing anything -->
         <button onclick="closeCancelModal()" class="flex-1 border border-gray-300 py-3 rounded-full font-semibold hover:bg-gray-50 transition">No, Keep It</button>
+        <!-- "Yes, Cancel" calls confirmCancel() which hits the cancel API endpoint -->
         <button onclick="confirmCancel()" class="flex-1 bg-red-600 text-white py-3 rounded-full font-semibold hover:bg-red-700 transition">Yes, Cancel</button>
       </div>
     </div>
   </div>
 
   <script>
+    // API_BASE is empty — all fetch calls are relative to the current server (localhost:8080).
     const API_BASE = '';
+
+    // currentCancelReference — stores the booking reference of the booking being cancelled.
+    // Set by openCancelModal() and used by confirmCancel().
     let currentCancelReference = null;
 
+    // ─── showMessage(type, title, message) ───────────────────────────────────────
+    // Reusable popup function (same implementation as packages.html).
+    // type: 'success', 'error', or 'info'
     function showMessage(type, title, message) {
-      const box = document.getElementById('message-box');
-      const icon = document.getElementById('message-icon');
+      const box       = document.getElementById('message-box');
+      const icon      = document.getElementById('message-icon');
       const titleNode = document.getElementById('message-title');
       const messageNode = document.getElementById('message-text');
+      // Map type to CSS colour and Font Awesome icon class.
       const styles = {
         success: { icon: 'bg-green-600', symbol: 'fa-check' },
-        error: { icon: 'bg-red-600', symbol: 'fa-triangle-exclamation' },
-        info: { icon: 'bg-blue-600', symbol: 'fa-circle-info' }
+        error:   { icon: 'bg-red-600',   symbol: 'fa-triangle-exclamation' },
+        info:    { icon: 'bg-blue-600',   symbol: 'fa-circle-info' }
       };
       const theme = styles[type] || styles.info;
 
@@ -106,32 +155,39 @@
       icon.innerHTML = `<i class="fa-solid ${theme.symbol}"></i>`;
       titleNode.textContent = title;
       messageNode.textContent = message;
-      box.classList.remove('hidden');
+      box.classList.remove('hidden'); // Make the box visible.
     }
 
+    // ─── hideMessage() ────────────────────────────────────────────────────────────
     function hideMessage() {
       document.getElementById('message-box').classList.add('hidden');
     }
 
+    // Attach "OK" button to close the message box.
     document.getElementById('message-close').addEventListener('click', hideMessage);
+    // Also close when clicking the dark overlay behind the box.
     document.getElementById('message-box').addEventListener('click', (event) => {
       if (event.target.id === 'message-box') {
         hideMessage();
       }
     });
 
+    // ─── searchBookings() ─────────────────────────────────────────────────────────
+    // Called by the Search button (onclick) and the Enter key listener below.
+    // Reads the email input, calls GET /api/bookings/email/{email}, then renders results.
     async function searchBookings() {
       const email = document.getElementById('search-email').value.trim();
       
+      // Front-end validation: don't allow an empty search.
       if (!email) {
         showMessage('error', 'Missing email', 'Please enter your email address.');
         return;
       }
       
-      // Save email for auto-search next time
+      // Save the email in localStorage so it can be auto-filled next time the page loads.
       localStorage.setItem('buffetEaseEmail', email);
       
-      // Show loading state
+      // Show a loading spinner while the API call is in progress.
       const container = document.getElementById('bookings-list');
       container.innerHTML = `
         <div class="text-center py-12">
@@ -141,15 +197,18 @@
       `;
       
       try {
+        // encodeURIComponent handles special characters in email (e.g. "+" signs).
+        // Calls: GET /api/bookings/email/{email}
         const response = await fetch(`${API_BASE}/api/bookings/email/${encodeURIComponent(email)}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const bookings = await response.json();
-        renderBookings(bookings);
+        const bookings = await response.json(); // Parse JSON array of booking objects.
+        renderBookings(bookings); // Hand off to renderBookings() to display the results.
       } catch (error) {
+        // Show an error state with a Retry button if anything went wrong.
         document.getElementById('bookings-list').innerHTML = `
           <div class="text-center py-12">
             <i class="fa-solid fa-circle-exclamation text-5xl text-red-500 mb-4"></i>
@@ -164,9 +223,14 @@
       }
     }
 
+    // ─── renderBookings(bookings) ─────────────────────────────────────────────────
+    // Renders an array of booking objects as booking cards in the #bookings-list div.
+    // Each card shows package name, date, time, guest count, price, status badge,
+    // and a "Cancel Booking" button (only for CONFIRMED bookings).
     function renderBookings(bookings) {
       const container = document.getElementById('bookings-list');
       
+      // Handle the case where the email has no bookings.
       if (!bookings || bookings.length === 0) {
         container.innerHTML = `
           <div class="text-center py-12">
@@ -182,6 +246,8 @@
         return;
       }
 
+      // .map() converts each booking object into an HTML card string.
+      // .join('') concatenates all cards into one HTML string.
       container.innerHTML = bookings.map(b => `
         <div class="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
           <div class="flex justify-between items-start flex-wrap gap-4">
@@ -190,6 +256,7 @@
                 <i class="fa-solid fa-receipt text-brand-olive text-xl"></i>
                 <h3 class="text-2xl serif font-bold text-gray-800">${b.packageName}</h3>
               </div>
+              <!-- Format the ISO date string (e.g. "2026-05-10") into a readable format -->
               <p class="text-gray-600 mb-2">
                 <i class="fa-regular fa-calendar mr-2 text-brand-olive"></i>
                 ${new Date(b.sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -198,10 +265,12 @@
                 <i class="fa-regular fa-clock mr-2 text-brand-olive"></i>
                 ${b.sessionLabel}
               </p>
+              <!-- Ternary: show "Guest" for 1 person, "Guests" for 2+ -->
               <p class="text-gray-600 mb-3">
                 <i class="fa-regular fa-user mr-2 text-brand-olive"></i>
                 ${b.guestCount} Guest${b.guestCount > 1 ? 's' : ''}
               </p>
+              <!-- Show special requests only if the field is not empty/null -->
               ${b.specialRequests ? `<p class="text-gray-500 text-sm italic mt-2 bg-gray-50 p-3 rounded-lg">"${b.specialRequests}"</p>` : ''}
               <p class="text-xs text-gray-400 mt-4">
                 <i class="fa-regular fa-id-card mr-1"></i>
@@ -209,13 +278,17 @@
               </p>
             </div>
             <div class="text-right">
+              <!-- Status badge: green for CONFIRMED, red for CANCELLED -->
+              <!-- Ternary operator selects the correct CSS classes based on b.status -->
               <span class="px-4 py-1 text-xs font-bold rounded-full ${b.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
                 <i class="fa-solid ${b.status === 'CONFIRMED' ? 'fa-check-circle' : 'fa-times-circle'} mr-1"></i>
                 ${b.status}
               </span>
+              <!-- Total price display -->
               <div class="mt-4 text-3xl font-bold text-brand-olive">
                 $${b.totalPrice}
               </div>
+              <!-- Cancel button only rendered for CONFIRMED bookings (not already cancelled) -->
               ${b.status === 'CONFIRMED' ? `
                 <button onclick="openCancelModal('${b.bookingReference}')" 
                         class="mt-4 text-red-600 hover:text-red-800 text-sm font-semibold transition duration-300 hover:underline">
@@ -229,64 +302,77 @@
       `).join('');
     }
 
+    // ─── openCancelModal(bookingReference) ───────────────────────────────────────
+    // Shows the cancellation confirmation modal for the given booking reference.
+    // Stores the reference in currentCancelReference so confirmCancel() knows which booking to cancel.
     function openCancelModal(bookingReference) {
-      currentCancelReference = bookingReference;
-      document.getElementById('cancel-modal').classList.remove('hidden');
-      // Prevent body scrolling when modal is open
-      document.body.style.overflow = 'hidden';
+      currentCancelReference = bookingReference; // Remember which booking to cancel.
+      document.getElementById('cancel-modal').classList.remove('hidden'); // Show the modal.
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling.
     }
 
+    // ─── closeCancelModal() ───────────────────────────────────────────────────────
+    // Hides the cancellation modal and clears the stored booking reference.
     function closeCancelModal() {
       document.getElementById('cancel-modal').classList.add('hidden');
-      currentCancelReference = null;
-      // Restore body scrolling
-      document.body.style.overflow = 'auto';
+      currentCancelReference = null;             // Clear so a stale reference cannot be used.
+      document.body.style.overflow = 'auto';     // Restore page scrolling.
     }
 
+    // ─── confirmCancel() ──────────────────────────────────────────────────────────
+    // Called when the customer clicks "Yes, Cancel" in the cancellation modal.
+    // Sends PUT /api/bookings/{reference}/cancel to the backend, then refreshes the list.
     async function confirmCancel() {
-      if (!currentCancelReference) return;
+      if (!currentCancelReference) return; // Safety guard — should not happen.
       
+      // Get the button that was clicked and temporarily disable it during the API call.
       const button = event.target;
       const originalText = button.textContent;
-      button.textContent = 'Cancelling...';
-      button.disabled = true;
+      button.textContent = 'Cancelling...'; // Visual feedback.
+      button.disabled = true;               // Prevent double-click.
       
       try {
+        // Send the cancel request: PUT /api/bookings/{currentCancelReference}/cancel
         const response = await fetch(`${API_BASE}/api/bookings/${currentCancelReference}/cancel`, {
-          method: 'PUT'
+          method: 'PUT' // HTTP PUT method as defined in BookingController.cancelBooking().
         });
         
-        const result = await response.json();
+        const result = await response.json(); // Parse the JSON response.
         
         if (response.ok) {
           showMessage('success', 'Booking cancelled', 'Booking cancelled successfully.');
-          closeCancelModal();
-          // Refresh the bookings list
-          await searchBookings();
+          closeCancelModal(); // Hide the confirmation modal.
+          await searchBookings(); // Refresh the bookings list to show updated status.
         } else {
+          // Server returned an error (e.g. booking already cancelled).
           showMessage('error', 'Unable to cancel booking', result.error || 'Failed to cancel booking');
         }
       } catch (error) {
         showMessage('error', 'Connection failed', 'Failed to cancel booking. Please try again.');
       } finally {
+        // Re-enable the button regardless of success or failure (runs after try/catch).
         button.textContent = originalText;
         button.disabled = false;
       }
     }
 
-    // Auto-search if email is stored
+    // ─── window.onload ────────────────────────────────────────────────────────────
+    // Runs automatically when the page finishes loading.
+    // Checks if the customer's email was saved in localStorage (from a previous booking on packages.html).
+    // If found, auto-fills the email field and triggers a search immediately.
     window.onload = () => {
-      const savedEmail = localStorage.getItem('buffetEaseEmail');
+      const savedEmail = localStorage.getItem('buffetEaseEmail'); // Try to retrieve saved email.
       if (savedEmail) {
-        document.getElementById('search-email').value = savedEmail;
-        searchBookings();
+        document.getElementById('search-email').value = savedEmail; // Auto-fill the email field.
+        searchBookings(); // Automatically search for this customer's bookings.
       }
     };
 
-    // Allow pressing Enter key to search
+    // ─── Enter key listener ───────────────────────────────────────────────────────
+    // Allows the customer to press Enter in the email field instead of clicking Search.
     document.getElementById('search-email').addEventListener('keypress', function(event) {
       if (event.key === 'Enter') {
-        searchBookings();
+        searchBookings(); // Same as clicking the Search button.
       }
     });
   </script>

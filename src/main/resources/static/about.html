@@ -1,27 +1,38 @@
 <!DOCTYPE html>
+<!-- about.html — About Us Page
+     Contains three tab-based sections:
+       Tab 0 "Our Story"   — static text about the restaurant.
+       Tab 1 "Our Team"    — static chef profile cards.
+       Tab 2 "Contact Us"  — a contact form that calls POST /api/contact.
+     URL: http://localhost:8080/about.html -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>About Us - BuffetEase</title>
+  <!-- Tailwind CSS — utility CSS framework (no local install needed) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome — icons for map pin, phone, envelope, etc. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
   <style>
+    /* Two Google fonts: Playfair Display (serif headings) + Inter (body text) */
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
     
-    .serif { font-family: 'Playfair Display', serif; }
-    .brand-olive { color: #4a7043; }
+    .serif { font-family: 'Playfair Display', serif; } /* Used for headings */
+    .brand-olive  { color: #4a7043; }                  /* Restaurant brand green */
     .bg-brand-olive { background-color: #4a7043; }
-    .bg-brand-cream { background-color: #f8f1e3; }
+    .bg-brand-cream { background-color: #f8f1e3; }     /* Warm cream background for icon boxes */
 
+    /* .tab-button — base styles for the "Our Story / Our Team / Contact Us" pill buttons */
     .tab-button {
       padding: 12px 32px;
-      border-radius: 9999px;
-      transition: all 0.3s;
+      border-radius: 9999px; /* Fully rounded pill shape */
+      transition: all 0.3s;  /* Smooth animation when switching tabs */
     }
     
+    /* .tab-button.active — styles applied to the currently selected tab */
     .tab-button.active {
-      background-color: #4a7043;
+      background-color: #4a7043; /* Olive green background */
       color: white;
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
@@ -29,22 +40,33 @@
 </head>
 <body class="bg-gray-50">
 
+  <!-- ═══════════════════════════════════════════════════════
+       REUSABLE MESSAGE BOX (same component pattern as other pages)
+       Displayed by showMessage(), hidden by hideMessage().
+       z-[70] ensures it appears above all other content.
+  ═══════════════════════════════════════════════════════ -->
   <div id="message-box" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4">
     <div class="w-full max-w-md rounded-3xl bg-white px-6 py-6 shadow-2xl">
       <div class="flex items-start gap-4">
+        <!-- Icon circle — colour and symbol are set by showMessage() -->
         <div id="message-icon" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"></div>
         <div class="min-w-0 flex-1">
+          <!-- Title and message text set dynamically in JavaScript -->
           <div id="message-title" class="text-lg font-semibold text-gray-900"></div>
           <div id="message-text" class="mt-2 text-sm leading-relaxed text-gray-600"></div>
         </div>
       </div>
       <div class="mt-6 flex justify-end">
+        <!-- OK button closes the message box -->
         <button id="message-close" class="rounded-full bg-[#4a7043] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#3e5f39]">OK</button>
       </div>
     </div>
   </div>
 
-  <!-- Navbar -->
+  <!-- ═══════════════════════════════════════════════════════
+       NAVIGATION BAR
+       "About" link is highlighted (text-brand-olive font-semibold) as the active page.
+  ═══════════════════════════════════════════════════════ -->
   <nav class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
       <a href="index.html" class="flex items-center gap-3">
@@ -54,13 +76,14 @@
       <div class="flex gap-8 text-lg">
         <a href="index.html">Home</a>
         <a href="packages.html">Packages</a>
-        <a href="about.html" class="text-brand-olive font-semibold">About</a>
+        <a href="about.html" class="text-brand-olive font-semibold">About</a> <!-- Active page -->
         <a href="my-bookings.html">My Bookings</a>
       </div>
     </div>
   </nav>
 
   <div class="max-w-6xl mx-auto px-6 py-16">
+    <!-- Page heading (static — no API call needed) -->
     <div class="text-center mb-12">
       <h1 class="text-6xl md:text-7xl serif mb-6">About BuffetEase</h1>
       <p class="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -68,19 +91,33 @@
       </p>
     </div>
 
-    <!-- Tabs -->
+    <!-- ═══════════════════════════════════════════════════════
+         TAB NAVIGATION
+         Three pill-shaped buttons. onclick="switchTab(N)" calls the JavaScript
+         function that hides all tab content sections and shows only the Nth one.
+         The first tab (index 0) is shown by default via window.onload → switchTab(0).
+    ═══════════════════════════════════════════════════════ -->
     <div class="flex justify-center mb-12">
       <div class="bg-white p-1.5 rounded-full border shadow-sm inline-flex">
+        <!-- onclick="switchTab(0)" — shows "Our Story" panel, highlights this button -->
         <button onclick="switchTab(0)" id="tab0" class="tab-button active font-medium">Our Story</button>
+        <!-- onclick="switchTab(1)" — shows "Our Team" panel -->
         <button onclick="switchTab(1)" id="tab1" class="tab-button font-medium">Our Team</button>
+        <!-- onclick="switchTab(2)" — shows "Contact Us" panel -->
         <button onclick="switchTab(2)" id="tab2" class="tab-button font-medium">Contact Us</button>
       </div>
     </div>
 
-    <!-- Tab Contents -->
+    <!-- ═══════════════════════════════════════════════════════
+         TAB CONTENT SECTIONS
+         All three sections have class="tab-content".
+         switchTab() adds "hidden" to all, then removes "hidden" from the selected one.
+         content1 and content2 start with "hidden" class — only content0 is visible initially.
+    ═══════════════════════════════════════════════════════ -->
 
-    <!-- Our Story -->
+    <!-- ─── TAB 0: Our Story (visible by default) ──────────────────────────── -->
     <div id="content0" class="tab-content">
+      <!-- Two-column grid: text on the left, restaurant photo on the right -->
       <div class="grid md:grid-cols-2 gap-16 items-center">
         <div class="space-y-8">
           <h2 class="text-4xl serif font-bold">A Journey of Flavors</h2>
@@ -93,6 +130,7 @@
             From our artisanal Sunday brunches to our premium seafood nights, every service is a celebration of food.
           </p>
           
+          <!-- Statistics row: two bold numbers with labels -->
           <div class="flex gap-12 pt-8">
             <div class="text-center">
               <div class="text-5xl font-bold text-brand-olive">50+</div>
@@ -105,6 +143,7 @@
           </div>
         </div>
         
+        <!-- Unsplash restaurant interior photo -->
         <div class="relative rounded-3xl overflow-hidden shadow-2xl">
           <img src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&q=80&w=1000" 
                alt="Restaurant interior" class="w-full h-full object-cover">
@@ -112,17 +151,19 @@
       </div>
     </div>
 
-    <!-- Our Team -->
+    <!-- ─── TAB 1: Our Team (hidden by default) ────────────────────────────── -->
     <div id="content1" class="tab-content hidden">
       <div class="text-center max-w-2xl mx-auto mb-12">
         <h2 class="text-4xl serif font-bold mb-4">Meet Our Master Chefs</h2>
         <p class="text-gray-600 text-lg">Our kitchen is led by award-winning culinary experts with decades of international experience.</p>
       </div>
       
+      <!-- 3-column grid of chef profile cards (all static content — no API call) -->
       <div class="grid md:grid-cols-3 gap-8">
         <!-- Chef 1 -->
         <div class="bg-white rounded-3xl overflow-hidden shadow-lg">
           <div class="h-80 overflow-hidden">
+            <!-- Chef photo from Unsplash; h-80 = fixed height, object-cover = crop to fill -->
             <img src="https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&q=80&w=800" 
                  alt="Chef Marcus Lin" class="w-full h-full object-cover">
           </div>
@@ -158,31 +199,37 @@
       </div>
     </div>
 
-    <!-- Contact Us -->
+    <!-- ─── TAB 2: Contact Us (hidden by default) ──────────────────────────── -->
     <div id="content2" class="tab-content hidden">
+      <!-- Two-column grid: contact form on the left, contact info on the right -->
       <div class="grid md:grid-cols-2 gap-16">
-        <!-- Contact Form -->
+
+        <!-- Contact Form — submits to POST /api/contact via sendMessage() -->
         <div class="bg-white rounded-3xl shadow-xl p-10">
           <h2 class="text-3xl serif font-bold mb-8">Send us a Message</h2>
           <div class="space-y-6">
+            <!-- Name field — read by sendMessage() as contact-name -->
             <div>
               <label class="block text-sm font-medium mb-2">Your Name</label>
               <input type="text" id="contact-name" 
                      class="w-full border border-gray-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-brand-olive" 
                      placeholder="Full name">
             </div>
+            <!-- Email field — read by sendMessage() as contact-email -->
             <div>
               <label class="block text-sm font-medium mb-2">Email Address</label>
               <input type="email" id="contact-email" 
                      class="w-full border border-gray-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-brand-olive" 
                      placeholder="you@example.com">
             </div>
+            <!-- Message textarea — read by sendMessage() as contact-message -->
             <div>
               <label class="block text-sm font-medium mb-2">Message</label>
               <textarea id="contact-message" rows="6"
                         class="w-full border border-gray-300 rounded-3xl px-6 py-4 focus:outline-none focus:border-brand-olive"
                         placeholder="How can we help you?"></textarea>
             </div>
+            <!-- Send button — calls sendMessage() which hits POST /api/contact -->
             <button onclick="sendMessage()" 
                     class="w-full bg-brand-olive hover:bg-green-800 text-white py-4 rounded-full font-semibold text-lg transition">
               Send Message
@@ -190,7 +237,7 @@
           </div>
         </div>
 
-        <!-- Contact Info -->
+        <!-- Contact Information (static — no API call) -->
         <div class="space-y-12">
           <div>
             <h2 class="text-4xl serif font-bold mb-6">Get in Touch</h2>
@@ -200,10 +247,10 @@
           </div>
 
           <div class="space-y-10">
-            <!-- Location -->
+            <!-- Location block: icon in a cream-coloured rounded box + address text -->
             <div class="flex gap-5">
               <div class="bg-brand-cream p-4 rounded-2xl text-brand-olive">
-                <i class="fa-solid fa-map-pin text-3xl"></i>
+                <i class="fa-solid fa-map-pin text-3xl"></i>  <!-- Font Awesome map pin icon -->
               </div>
               <div>
                 <h3 class="font-bold text-xl mb-1">Location</h3>
@@ -211,10 +258,10 @@
               </div>
             </div>
 
-            <!-- Phone -->
+            <!-- Phone block -->
             <div class="flex gap-5">
               <div class="bg-brand-cream p-4 rounded-2xl text-brand-olive">
-                <i class="fa-solid fa-phone text-3xl"></i>
+                <i class="fa-solid fa-phone text-3xl"></i>    <!-- Font Awesome phone icon -->
               </div>
               <div>
                 <h3 class="font-bold text-xl mb-1">Phone</h3>
@@ -222,10 +269,10 @@
               </div>
             </div>
 
-            <!-- Email -->
+            <!-- Email block: lists the team members' PolyU email addresses -->
             <div class="flex gap-5">
               <div class="bg-brand-cream p-4 rounded-2xl text-brand-olive">
-                <i class="fa-solid fa-envelope text-3xl"></i>
+                <i class="fa-solid fa-envelope text-3xl"></i>  <!-- Font Awesome envelope icon -->
               </div>
               <div>
                 <h3 class="font-bold text-xl mb-1">Email</h3>
@@ -244,18 +291,22 @@
   </div>
 
   <script>
-    // FIXED: Use correct API path
+    // API_BASE is empty — all fetch calls go to the same server (relative URLs).
     const API_BASE = '';
 
+    // ─── showMessage(type, title, message) ───────────────────────────────────────
+    // Reusable popup function (same pattern used in packages.html and my-bookings.html).
+    // type: 'success' (green), 'error' (red), or 'info' (blue)
     function showMessage(type, title, message) {
-      const box = document.getElementById('message-box');
-      const icon = document.getElementById('message-icon');
+      const box       = document.getElementById('message-box');
+      const icon      = document.getElementById('message-icon');
       const titleNode = document.getElementById('message-title');
       const messageNode = document.getElementById('message-text');
+      // Map type string to Tailwind colour class and Font Awesome icon name.
       const styles = {
         success: { icon: 'bg-green-600', symbol: 'fa-check' },
-        error: { icon: 'bg-red-600', symbol: 'fa-triangle-exclamation' },
-        info: { icon: 'bg-blue-600', symbol: 'fa-circle-info' }
+        error:   { icon: 'bg-red-600',   symbol: 'fa-triangle-exclamation' },
+        info:    { icon: 'bg-blue-600',   symbol: 'fa-circle-info' }
       };
       const theme = styles[type] || styles.info;
 
@@ -263,78 +314,95 @@
       icon.innerHTML = `<i class="fa-solid ${theme.symbol}"></i>`;
       titleNode.textContent = title;
       messageNode.textContent = message;
-      box.classList.remove('hidden');
+      box.classList.remove('hidden'); // Make the popup visible.
     }
 
+    // ─── hideMessage() ────────────────────────────────────────────────────────────
     function hideMessage() {
       document.getElementById('message-box').classList.add('hidden');
     }
 
+    // Close message box when "OK" button is clicked.
     document.getElementById('message-close').addEventListener('click', hideMessage);
+    // Also close when clicking the dark overlay behind the box.
     document.getElementById('message-box').addEventListener('click', (event) => {
       if (event.target.id === 'message-box') {
         hideMessage();
       }
     });
-    
+
+    // ─── switchTab(tabIndex) ──────────────────────────────────────────────────────
+    // Controls which tab content section is visible.
+    // tabIndex: 0 = Our Story, 1 = Our Team, 2 = Contact Us
     function switchTab(tabIndex) {
-      // Hide all contents
+      // Hide all tab content sections (add "hidden" class to each .tab-content element).
       document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.add('hidden');
       });
       
-      // Show selected content
+      // Show only the selected tab's content (remove "hidden" from content{tabIndex}).
       document.getElementById(`content${tabIndex}`).classList.remove('hidden');
       
-      // Update active tab button
+      // Update the tab button styles: add "active" to the clicked button, remove from others.
       document.querySelectorAll('.tab-button').forEach((btn, index) => {
         if (index === tabIndex) {
-          btn.classList.add('active');
+          btn.classList.add('active');    // Olive background + white text (from CSS above).
         } else {
-          btn.classList.remove('active');
+          btn.classList.remove('active'); // Back to default transparent style.
         }
       });
     }
 
+    // ─── sendMessage() ────────────────────────────────────────────────────────────
+    // Called when "Send Message" button is clicked on the Contact Us tab.
+    // Validates the form, then sends a POST request to /api/contact.
+    // The backend saves the message in the contact_messages database table.
     async function sendMessage() {
-      const name = document.getElementById('contact-name').value.trim();
-      const email = document.getElementById('contact-email').value.trim();
+      // Read and trim all three form fields.
+      const name    = document.getElementById('contact-name').value.trim();
+      const email   = document.getElementById('contact-email').value.trim();
       const message = document.getElementById('contact-message').value.trim();
 
+      // Front-end validation: all fields are required before hitting the API.
       if (!name || !email || !message) {
         showMessage('error', 'Message not sent', 'Please fill in all fields before sending.');
         return;
       }
 
       try {
+        // Send POST /api/contact with the form data as a JSON body.
+        // JSON.stringify({ name, email, message }) converts the object to a JSON string.
         const response = await fetch(`${API_BASE}/api/contact`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' }, // Tell Spring to parse body as JSON.
           body: JSON.stringify({ name, email, message })
         });
         
-        const result = await response.json();
+        const result = await response.json(); // Parse the JSON response from the server.
         
         if (response.ok) {
+          // Success: show a personalised thank-you message.
           showMessage('success', `Thank you, ${name}!`, "Your message has been received. We'll get back to you soon.");
           
-          // Clear form
+          // Clear all form fields after successful submission.
           document.getElementById('contact-name').value = '';
           document.getElementById('contact-email').value = '';
           document.getElementById('contact-message').value = '';
         } else {
+          // Server returned an error (e.g. validation failure).
           showMessage('error', 'Unable to send message', result.error || 'Failed to send message');
         }
       } catch (error) {
+        // Network error — the backend server may not be running.
         showMessage('error', 'Connection failed', 'Failed to send message. Please make sure the backend server is running.');
       }
     }
 
-    // Set default tab to Story on page load
+    // ─── window.onload ────────────────────────────────────────────────────────────
+    // Runs automatically when the page finishes loading.
+    // Activates the first tab ("Our Story") as the default visible section.
     window.onload = () => {
-      switchTab(0);
+      switchTab(0); // Show tab 0 and highlight its button.
     };
   </script>
 </body>
