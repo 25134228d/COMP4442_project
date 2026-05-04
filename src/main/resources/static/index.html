@@ -1,33 +1,62 @@
 <!DOCTYPE html>
+<!-- index.html — Home Page (Landing Page) of BuffetEase
+     This is the first page visitors see. It is 100% static — no API calls.
+     Served directly by Spring Boot from src/main/resources/static/.
+     URL: http://localhost:8080/  or  http://localhost:8080/index.html -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- viewport meta: makes the page scale correctly on mobile screens -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BuffetEase • Hong Kong</title>
+
+  <!-- Tailwind CSS — utility-first CSS framework loaded from CDN (no local install needed).
+       Classes like "bg-white", "text-3xl", "flex", "grid" come from Tailwind. -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome — icon library. Used for fa-utensils, fa-star, fa-clock, fa-users icons. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+
   <style>
+    /* Import two Google Fonts:
+       - Playfair Display (serif) → used for headings to give an elegant/luxury feel.
+       - Inter (sans-serif) → used for body text for clean readability. */
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+    /* .serif — applies Playfair Display to any element with class="serif" */
     .serif { font-family: 'Playfair Display', serif; }
+
+    /* Brand colour classes — the restaurant's olive green (#4a7043) used throughout all pages */
     .brand-olive { color: #4a7043; }
     .bg-brand-olive { background-color: #4a7043; }
+
+    /* .hero-bg — full-screen background for the hero section.
+       linear-gradient adds a dark overlay so the white text is readable over the photo.
+       The photo URL is a free Unsplash image of food. */
     .hero-bg {
       background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)), 
                         url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=2070');
-      background-size: cover;
-      background-position: center;
+      background-size: cover;         /* Scale the image to fill the entire container */
+      background-position: center;    /* Keep the centre of the image in view */
     }
   </style>
 </head>
+<!-- bg-gray-50 — light grey background for the whole page body -->
 <body class="bg-gray-50">
 
-  <!-- Navbar -->
+  <!-- ═══════════════════════════════════════════════════════
+       NAVIGATION BAR
+       sticky top-0 z-50 — stays at the top of the screen as the user scrolls.
+       shadow-sm — subtle drop shadow to separate nav from content below.
+  ═══════════════════════════════════════════════════════ -->
   <nav class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <!-- Logo: clicking the utensils icon or "BuffetEase" text goes to index.html -->
       <a href="index.html" class="flex items-center gap-3">
         <i class="fa-solid fa-utensils text-3xl text-brand-olive"></i>
         <h1 class="text-3xl serif font-bold">BuffetEase</h1>
       </a>
+      <!-- Navigation links — hover:text-brand-olive changes link colour on mouse hover -->
       <div class="flex gap-8 text-lg">
         <a href="index.html" class="hover:text-brand-olive transition">Home</a>
         <a href="packages.html" class="hover:text-brand-olive transition">Packages</a>
@@ -37,40 +66,60 @@
     </div>
   </nav>
 
-  <!-- Hero -->
+  <!-- ═══════════════════════════════════════════════════════
+       HERO SECTION
+       h-screen — takes up 100% of the viewport height (full-screen).
+       flex items-center — vertically centres the text content.
+       text-white — white text so it is readable over the dark image overlay.
+  ═══════════════════════════════════════════════════════ -->
   <section class="hero-bg h-screen flex items-center text-white">
     <div class="max-w-5xl mx-auto px-6 text-center">
+      <!-- Main headline — large serif font for luxury feel -->
       <h1 class="text-6xl md:text-8xl serif leading-none mb-6">
         A Symphony<br>of <span class="italic text-amber-300">Flavors</span>
+        <!-- text-amber-300 makes "Flavors" golden/amber coloured -->
       </h1>
       <p class="text-2xl max-w-2xl mx-auto mb-10">Experience world-class buffet dining in Hung Hom, Hong Kong.</p>
+      <!-- Call-to-action button: navigates to the packages page -->
       <a href="packages.html" class="inline-block bg-black text-brand-olive font-semibold text-xl px-12 py-6 rounded-full hover:bg-amber-100 transition shadow-xl">
         Explore Our Packages →
       </a>
     </div>
   </section>
 
-  <!-- Features -->
+  <!-- ═══════════════════════════════════════════════════════
+       FEATURES SECTION
+       3-column grid layout (md:grid-cols-3 = 3 columns on medium+ screens).
+       Each column has an icon, heading, and short description.
+  ═══════════════════════════════════════════════════════ -->
   <section class="py-24 bg-white">
     <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-12">
+      <!-- Feature 1: Premium Selection -->
       <div class="text-center">
-        <i class="fa-solid fa-star text-5xl text-brand-olive mb-6"></i>
+        <i class="fa-solid fa-star text-5xl text-brand-olive mb-6"></i>    <!-- Star icon from Font Awesome -->
         <h3 class="text-2xl font-bold mb-3">Premium Selection</h3>
         <p class="text-gray-600">Only the finest ingredients sourced daily.</p>
       </div>
+      <!-- Feature 2: Flexible Sessions -->
       <div class="text-center">
-        <i class="fa-solid fa-clock text-5xl text-brand-olive mb-6"></i>
+        <i class="fa-solid fa-clock text-5xl text-brand-olive mb-6"></i>   <!-- Clock icon -->
         <h3 class="text-2xl font-bold mb-3">Flexible Sessions</h3>
         <p class="text-gray-600">Lunch, Brunch & Dinner times that suit you.</p>
       </div>
+      <!-- Feature 3: Perfect for Groups -->
       <div class="text-center">
-        <i class="fa-solid fa-users text-5xl text-brand-olive mb-6"></i>
+        <i class="fa-solid fa-users text-5xl text-brand-olive mb-6"></i>   <!-- People/users icon -->
         <h3 class="text-2xl font-bold mb-3">Perfect for Groups</h3>
         <p class="text-gray-600">Ideal for family gatherings and corporate events.</p>
       </div>
     </div>
   </section>
 
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+       bg-gray-900 text-white — dark background with white text.
+       Displays restaurant address and contact info.
+  ═══════════════════════════════════════════════════════ -->
   <footer class="bg-gray-900 text-white py-16">
     <div class="max-w-6xl mx-auto px-6 text-center">
       <p class="text-2xl serif mb-2">BuffetEase</p>
